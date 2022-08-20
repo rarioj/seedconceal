@@ -1,0 +1,6 @@
+{
+    "require": {
+        "bitwasp/bitcoin": "*",
+        "milon/barcode": "^9.0"
+    }
+}
