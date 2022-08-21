@@ -3,13 +3,13 @@
 declare(strict_types=1);
 error_reporting(E_ALL ^ E_DEPRECATED);
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use BitWasp\Buffertools\Buffer;
 use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
 use Milon\Barcode\DNS2D;
 
-$config = require_once __DIR__ . '/config.php';
+$config = require_once __DIR__ . '/../config.php';
 $label = filter_input(INPUT_POST, 'label', FILTER_DEFAULT);
 $mnemonic = filter_input(INPUT_POST, 'mnemonic', FILTER_DEFAULT);
 $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
@@ -42,12 +42,12 @@ if (!empty($mnemonic) && !empty($password)) {
 
   $logs[] = 'Populating dictionaries';
   $dictionaries = [];
-  $dictionaries['en'] = explode(PHP_EOL, file_get_contents(__DIR__ . '/bip39/en.txt'));
+  $dictionaries['en'] = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/en.txt'));
   foreach ($config['languages'] as $lang_id => $lang_label) {
     if ($lang_id === 'en') {
       continue;
     }
-    $wordlists = explode(PHP_EOL, file_get_contents(__DIR__ . '/bip39/' . $lang_id . '.txt'));
+    $wordlists = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/' . $lang_id . '.txt'));
     $dictionaries[$lang_id] = array_combine($wordlists, $dictionaries['en']);
   }
   $dictionaries['en'] = array_combine($dictionaries['en'], $dictionaries['en']);
@@ -111,7 +111,7 @@ if (!empty($mnemonic) && !empty($password)) {
     if (!empty($final_en)) {
       $logs[] = 'Generating QR code';
       $barcode = new DNS2D();
-      $barcode->setStorPath(__DIR__ . '/cache/');
+      $barcode->setStorPath(__DIR__ . '/../cache/');
       $image_en = $barcode->getBarcodePNG($final_en, 'QRCODE');
     }
 
@@ -126,7 +126,7 @@ if (!empty($mnemonic) && !empty($password)) {
 <head>
   <meta charset="utf-8">
   <title>Seed Conceal - Reveal</title>
-  <link rel="stylesheet" href="/asset/style.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
@@ -155,9 +155,9 @@ if (!empty($mnemonic) && !empty($password)) {
     <canvas></canvas>
   </div>
   <div class="sc-footer">
-    <p><a href="https://github.com/rarioj">GitHub</a> &bull; <a href="/">Seed Conceal</a> &bull; Reveal</p>
+    <p><a href="https://github.com/rarioj/seedconceal">GitHub</a> &bull; <a href="/">Seed Conceal</a> &bull; Reveal</p>
   </div>
-  <script type="text/javascript" src="/asset/html2canvas.min.js"></script>
+  <script type="text/javascript" src="/html2canvas.min.js"></script>
 </body>
 
 </html>

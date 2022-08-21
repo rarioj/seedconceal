@@ -3,14 +3,14 @@
 declare(strict_types=1);
 error_reporting(E_ALL ^ E_DEPRECATED);
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use BitWasp\Buffertools\Buffer;
 use BitWasp\Bitcoin\Crypto\Random\Random;
 use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
 use Milon\Barcode\DNS2D;
 
-$config = require_once __DIR__ . '/config.php';
+$config = require_once __DIR__ . '/../config.php';
 $label = filter_input(INPUT_POST, 'label', FILTER_DEFAULT);
 $mnemonic = filter_input(INPUT_POST, 'mnemonic', FILTER_DEFAULT);
 $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
@@ -18,6 +18,7 @@ $split = (int) filter_input(INPUT_POST, 'split', FILTER_SANITIZE_NUMBER_INT);
 $lang = filter_input(INPUT_POST, 'lang', FILTER_DEFAULT);
 
 $random = new Random();
+$bip39 = MnemonicFactory::bip39();
 $logs = $final = $final_en = $images = $images_en = [];
 $image = $image_en = null;
 $error = false;
@@ -37,12 +38,12 @@ if (!empty($mnemonic) && !empty($password)) {
 
   $logs[] = 'Populating dictionaries';
   $dictionaries = [];
-  $dictionaries['en'] = explode(PHP_EOL, file_get_contents(__DIR__ . '/bip39/en.txt'));
+  $dictionaries['en'] = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/en.txt'));
   foreach ($config['languages'] as $lang_id => $lang_label) {
     if ($lang_id === 'en') {
       continue;
     }
-    $wordlists = explode(PHP_EOL, file_get_contents(__DIR__ . '/bip39/' . $lang_id . '.txt'));
+    $wordlists = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/' . $lang_id . '.txt'));
     $dictionaries[$lang_id] = array_combine($wordlists, $dictionaries['en']);
   }
   $dictionaries['en'] = array_combine($dictionaries['en'], $dictionaries['en']);
@@ -79,7 +80,6 @@ if (!empty($mnemonic) && !empty($password)) {
     $byte_size = $available_sizes[count($mnemonic_words)] * 2;
 
     $mnemonic_input = implode(' ', $mnemonic_words);
-    $bip39 = MnemonicFactory::bip39();
     $entropy_mnemonic = $bip39->mnemonicToEntropy($mnemonic_input)->getHex();
     $logs[] = 'Mnemonic input hex: ' . $entropy_mnemonic;
 
@@ -129,7 +129,7 @@ if (!empty($mnemonic) && !empty($password)) {
 
       $logs[] = 'Generating QR code';
       $barcode = new DNS2D();
-      $barcode->setStorPath(__DIR__ . '/cache/');
+      $barcode->setStorPath(__DIR__ . '/../cache/');
       $image = $barcode->getBarcodePNG(implode(PHP_EOL, $final), 'QRCODE');
       foreach ($final as $index => $final_mnemonic) {
         $images[$index] = $barcode->getBarcodePNG($final_mnemonic, 'QRCODE');
@@ -151,7 +151,7 @@ if (!empty($mnemonic) && !empty($password)) {
 <head>
   <meta charset="utf-8">
   <title>Seed Conceal - Obscure</title>
-  <link rel="stylesheet" href="/asset/style.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
@@ -219,9 +219,9 @@ if (!empty($mnemonic) && !empty($password)) {
     </div>
   <?php } ?>
   <div class="sc-footer">
-    <p><a href="https://github.com/rarioj">GitHub</a> &bull; <a href="/">Seed Conceal</a> &bull; Obscure</p>
+    <p><a href="https://github.com/rarioj/seedconceal">GitHub</a> &bull; <a href="/">Seed Conceal</a> &bull; Obscure</p>
   </div>
-  <script type="text/javascript" src="/asset/html2canvas.min.js"></script>
+  <script type="text/javascript" src="/html2canvas.min.js"></script>
 </body>
 
 </html>

@@ -3,13 +3,13 @@
 declare(strict_types=1);
 error_reporting(E_ALL ^ E_DEPRECATED);
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use BitWasp\Bitcoin\Crypto\Random\Random;
 use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
 use Milon\Barcode\DNS2D;
 
-$config = require_once __DIR__ . '/config.php';
+$config = require_once __DIR__ . '/../config.php';
 $label = filter_input(INPUT_POST, 'label', FILTER_DEFAULT);
 $size = (int) filter_input(INPUT_POST, 'size', FILTER_SANITIZE_NUMBER_INT);
 $logs = [];
@@ -27,7 +27,7 @@ $mnemonic_en = $mnemonic;
 $logs[] = 'Mnemonic hex: ' . $mnemonic_hex;
 
 $barcode = new DNS2D();
-$barcode->setStorPath(__DIR__ . '/cache/');
+$barcode->setStorPath(__DIR__ . '/../cache/');
 
 $logs[] = 'Generating QR code';
 $image = $barcode->getBarcodePNG($mnemonic, 'QRCODE');
@@ -41,7 +41,7 @@ $logs[] = 'All done!';
 <head>
   <meta charset="utf-8">
   <title>Seed Conceal - Generate</title>
-  <link rel="stylesheet" href="/asset/style.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
@@ -70,9 +70,9 @@ $logs[] = 'All done!';
     <canvas></canvas>
   </div>
   <div class="sc-footer">
-    <p><a href="https://github.com/rarioj">GitHub</a> &bull; <a href="/">Seed Conceal</a> &bull; Generate</p>
+    <p><a href="https://github.com/rarioj/seedconceal">GitHub</a> &bull; <a href="/">Seed Conceal</a> &bull; Generate</p>
   </div>
-  <script type="text/javascript" src="/asset/html2canvas.min.js"></script>
+  <script type="text/javascript" src="/html2canvas.min.js"></script>
 </body>
 
 </html>

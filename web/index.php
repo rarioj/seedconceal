@@ -3,7 +3,7 @@
 declare(strict_types=1);
 error_reporting(E_ALL ^ E_DEPRECATED);
 
-$config = require_once __DIR__ . '/config.php';
+$config = require_once __DIR__ . '/../config.php';
 
 ?>
 <!doctype html>
@@ -12,7 +12,7 @@ $config = require_once __DIR__ . '/config.php';
 <head>
   <meta charset="utf-8">
   <title>Seed Conceal</title>
-  <link rel="stylesheet" href="/asset/style.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
@@ -87,7 +87,7 @@ $config = require_once __DIR__ . '/config.php';
     </div>
   </div>
   <div class="sc-footer">
-    <p><a href="https://github.com/rarioj">GitHub</a> &bull; Seed Conceal</p>
+    <p><a href="https://github.com/rarioj/seedconceal">GitHub</a> &bull; Seed Conceal</p>
   </div>
 </body>
 

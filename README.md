@@ -2,27 +2,13 @@
 
 Seed Conceal is a simple set of tools to **Generate** a wallet mnemonic, **Obscure**/split them with a secret password, and **Reveal** obscured seed phrase(s).
 
-## Requirements
-
-- [PHP 7.4+ or 8+](https://www.php.net/)
-- [Composer 2+](https://getcomposer.org/)
-
-## Usage
-
-Clone this project and run the following commands:
-```
-composer install
-php -S localhost:9000
-```
-Open a browser and then go to `http://localhost:9000/`.
-
-**WARNING:** For best security practice, **DISABLE YOUR INTERNET CONNECTION** before *generating*, *obscuring/splitting*, or *revealing* seed phrases (air-gapped system). You can reenable the internet once your seed phrases are securely stored.
+## Tools
 
 ### Generate
 
 This tool generates a valid mnemonic (seed phrase) for a multi-coin wallet. If you are creating a new wallet, you can use this tool to produce a new mnemonic. Select between 12 or 24 words mnemonic. You can import the generated mnemonic to your favourite BIP39 compatible crypto wallet. See [BIP39](#bip39) section for more information.
 
-Clicking on the generated words or the QR code will allow you to capture the seed phrase card and save it as an image.
+For the web version, clicking on the generated words or the QR code will allow you to capture the seed phrase card and save it as an image.
 
 ### Obscure
 
@@ -42,13 +28,57 @@ Three layers of security can be applied when concealing seed phrases:
 
 > Make sure your custom wordlists files are backed up.
 
-Clicking on the generated words or the QR code will allow you to capture the seed phrase card and save it as an image.
+For the web version, clicking on the generated words or the QR code will allow you to capture the seed phrase card and save it as an image.
 
 ### Reveal
 
 This tool reveals split, translated, and password-protected seed phrases. For a split mnemonic, enter the seed phrases in the proper order given by the **Obscure** output above (separated by a new line).
 
-Clicking on the generated words or the QR code will allow you to capture the seed phrase card and save it as an image.
+For the web version, clicking on the generated words or the QR code will allow you to capture the seed phrase card and save it as an image.
+
+## Requirements
+
+- [PHP 7.4+ or 8+](https://www.php.net/)
+- [Composer 2+](https://getcomposer.org/)
+
+## Usage
+
+Clone this project and run the following commands:
+```
+git clone https://github.com/rarioj/seedconceal.git
+cd seedconceal
+composer install
+```
+
+**WARNING:** For best security practice, **DISABLE YOUR INTERNET CONNECTION** before *generating*, *obscuring/splitting*, or *revealing* seed phrases (air-gapped system). You can reenable the internet once your seed phrases are securely stored.
+
+### Web
+
+![Seed Conceal Web Version](screenshot/seedconceal-web.png)
+
+```
+cd web
+php -S localhost:9000
+```
+
+Open a web browser and then go to `http://localhost:9000/`. You can adjust the port number to your need.
+
+### CLI
+
+![Seed Conceal CLI Version](screenshot/seedconceal-cli.png)
+
+```
+# Run generate tool
+php cli/generate.php
+
+# Run obscure tool
+php cli/obscure.php
+
+# Run reveal tool
+php cli/reveal.php
+```
+
+Follow the interactive input prompt for each tool.
 
 ## Examples
 
@@ -127,6 +157,6 @@ Wordlists files provided:
 
 ## Libraries
 
-- [bitwasp/bitcoin](https://github.com/Bit-Wasp/bitcoin-php)
-- [milon/barcode](https://github.com/milon/barcode)
-- [html2canvas](https://html2canvas.hertzen.com/)
+- [bitwasp/bitcoin](https://github.com/Bit-Wasp/bitcoin-php): Bitcoin library for PHP.
+- [html2canvas](https://html2canvas.hertzen.com/): Capture mnemonic and QR code as an image for the web version.
+- [milon/barcode](https://github.com/milon/barcode): Generate QR codes for the web version.
