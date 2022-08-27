@@ -21,6 +21,21 @@ textarea {
   width: 100%;
 }
 
+dl {
+  font-size: 10px;
+  overflow: scroll;
+  padding: 0 0 10px;
+}
+
+dl dd {
+  margin-inline-start: 10px;
+}
+
+form label {
+  display: block;
+  padding-top: 10px;
+}
+
 .sc-canvas {
   position: absolute;
   right: 20px;
@@ -70,12 +85,6 @@ textarea {
 
 .sc-inner {
   padding: 20px 20px 10px;
-}
-
-.sc-log {
-  font-size: 10px;
-  overflow: scroll;
-  padding: 0 0 10px;
 }
 
 .sc-qrcode {

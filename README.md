@@ -1,34 +1,6 @@
-# Seed Conceal
+# SeedConceal
 
-Seed Conceal is a simple set of tools to **Generate** a wallet mnemonic, **Obscure**/split them with a secret password, and **Reveal** obscured seed phrase(s).
-
-## Tools
-
-### Generate
-
-This tool generates a valid mnemonic (seed phrase) for a multi-coin wallet. If you are creating a new wallet, you can use this tool to produce a new mnemonic. Select between 12 or 24 words mnemonic. You can import the generated mnemonic to your favourite BIP39 compatible crypto wallet. See [BIP39](#bip39) section for more information.
-
-### Obscure
-
-This tool obscures your wallet seed phrase with a secret password (and splits them if desired). You can use an existing mnemonic from your active wallet and conceal it.
-
-Three layers of security can be applied when concealing seed phrases:
-
-- **Password protection (required):** Obscured seed phrase with the password protection feature will generate a new valid mnemonic (which most likely will be an empty wallet). The only way to **Reveal** the original mnemonic is by using this password.
-
-> Make sure to remember your password.
-
-- **Splitting mnemonic (optional):** You can split the original mnemonic into multiple seed phrases (which all are equally valid and will likely point to empty wallets). The order of the seed phrases is critical when **Reveal**-ing your original wallet.
-
-> Record the mnemonic sequence as well.
-
-- **Translating mnemonic (optional):** You can translate obscured mnemonics into different languages. A standard set of alternative languages besides English is available. You can add your custom wordlists by creating a plain text file with all the 2048 words supplied. See [BIP39](#bip39) section for more information.
-
-> Make sure your custom wordlists files are backed up.
-
-### Reveal
-
-This tool reveals split, translated, and password-protected seed phrases. For a split mnemonic, enter the seed phrases in the proper order given by the **Obscure** output above (separated by a new line).
+SeedConceal is a simple set of tools to generate a wallet seed phrase (random or deterministic), obscure an existing seed phrase, and reveal obscured seed phrases.
 
 ## Requirements
 
@@ -37,122 +9,140 @@ This tool reveals split, translated, and password-protected seed phrases. For a 
 
 ## Usage
 
-Clone this project and run the following commands:
 ```
 git clone https://github.com/rarioj/seedconceal.git
 cd seedconceal
 composer install
 ```
 
-**WARNING:** For best security practice, **DISABLE YOUR INTERNET CONNECTION** before *generating*, *obscuring/splitting*, or *revealing* seed phrases (air-gapped system). You can reenable the internet once your seed phrases are securely stored.
+### Disable your internet connection before generating, obscuring, or revealing seed phrases.
 
-### Web
+By creating an air-gapped system, you can guarantee that your operating system will not interact with anything on the internet. You can reenable the internet once your seed phrases are securely stored.
 
-![Seed Conceal Web Version](screenshot/seedconceal-web.png)
+#### Web Mode
 
 ```
 cd web
 php -S localhost:9000
 ```
 
-Open a web browser and then go to `http://localhost:9000/`. You can adjust the port number to your need.
+Open a web browser and then go to `http://localhost:9000/`. You can adjust the port number to suit your need.
 
-For the web version, clicking on the generated words or the QR code will allow you to capture the seed phrase card and save it as an image.
+On the web version, clicking on the generated seed phrases or the QR codes will allow you to capture the seed phrase card and save it as an image.
 
-### CLI
-
-![Seed Conceal CLI Version](screenshot/seedconceal-cli.png)
+#### CLI Mode
 
 ```
-# Run generate tool
 php cli/generate.php
-
-# Run obscure tool
 php cli/obscure.php
-
-# Run reveal tool
 php cli/reveal.php
 ```
 
-Follow the interactive input prompt for each tool.
+Follow the interactive prompt for each tool.
+
+## Tools
+
+### Generate
+
+This tool generates a valid seed phrase for a wallet using a deterministic or random approach. Only use this tool if you plan to create a new wallet or divulge a deterministic wallet seed phrase by entering all the required parameters.
+
+When generating a new wallet, leaving the passphrase blank will use PHP's secure [random_bytes()](https://www.php.net/manual/en/function.random-bytes.php) function.
+
+For a deterministic approach, understand the risk of generating this type of wallet. See the [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf) paper. Ensure the passphrase used is unique, private, and never exposed on the internet. Using a password will reduce the attack vector by [XOR-ing](https://www.php.net/manual/en/function.gmp-xor.php) hashed passphrase and password. Take note of the [hash salt and the number of iterations](https://www.php.net/manual/en/function.hash-pbkdf2.php) as well.
+
+### Obscure
+
+This tool can obscure your existing wallet mnemonic by securing it with a password, splitting it into multiple seed phrases, and translating it to other languages. Use this tool if you plan to conceal an existing seed phrase.
+
+- **Securing with password:** Using a password will add additional security measures by [XOR-ing](https://www.php.net/manual/en/function.gmp-xor.php) private key and the hashed password. The [hash salt and the number of iterations](https://www.php.net/manual/en/function.hash-pbkdf2.php) are essential when revealing the original mnemonic.
+
+- **Splitting seed phrase:** You can split an existing mnemonic into multiple seed phrases. The order of the generated seed phrases is not critical when revealing the original mnemonic. PHP's secure [random_bytes()](https://www.php.net/manual/en/function.random-bytes.php) function is used to produce the final [XOR-ed](https://www.php.net/manual/en/function.gmp-xor.php) values. The same seed phrase will generate a different set of split mnemonics every time.
+
+- **Translating seed phrases:** You can translate obscured seed phrases into different languages. A standard set of alternative languages besides [English](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt) is available. See [BIP39](#bip39) section for more information.
+
+### Reveal
+
+This tool is the opposite of obscure. It reveals translated, split, and password-protected seed phrases. All parameters used when obscuring mnemonic is critical when revealing the original seed phrase (which includes hash salt, number of iterations, and password).
 
 ## Examples
 
-Several examples using Seed Conceal. Feel free to use these examples as a test.
+### Example 1: Generating a deterministic seed phrase
 
-### Example 1: Password protected; no split; no translation
+Parameters:
+- Passphrase: `I love Bitcoin`
+- Salt: `satoshi nakamoto`
+- Iteration: `10000`
+- Password: `ObscureMe!`
+- Byte size: `32` (24 words mnemonic)
 
-Generated 24 words mnemonic:
+Generated seed phrase:
+```
+sword oak page attack venture mountain ramp treat heavy level obscure resemble surround coach leaf comfort boat nuclear bunker minor picnic exhaust embark roof
+```
 
-`liberty essay coral into wing ceiling pulp obscure harvest pond smoke birth horn skate lunch harsh lunch slogan news canvas adjust scorpion grace plunge`
+### Example 2: Obscuring an existing seed phrase
 
-Obscured with password `ObscureMe!`:
+Parameters:
+- Seed phrase: `sword oak page attack venture mountain ramp treat heavy level obscure resemble surround coach leaf comfort boat nuclear bunker minor picnic exhaust embark roof`
+- Password: `ObscureMe!`
+- Salt: `genesis block`
+- Iteration: `25000`
+- Split into: `4`
+- Language: `random`
 
-`valve trap report mouse nurse unique number match brief hope human machine cause awake oven oven blood expire sight nothing invest add letter input`
+Generated seed phrases:
+```
+熊 鬼 都 賣 遍 冶 往 必 弄 點 審 號 錠 君 偶 溪 行 魯 篇 式 溝 嘆 功 子
+zamotat anketa masopust povstat pikle rachot matrika montovat dnes nadobro kapalina okrasa emise svatba klec pianista nejprve sobota mazanec zdivo ofina nominace otrhat lepenka
+ながい みりょく おどり べんごし ぬめり ていさつ おかわり おくじょう りきせつ すあな へいてん うなる そせい すいようび ひんしゅ みのう すらすら こすう さみしい うれしい かなざわし ねむい あずかる てつづき
+climat blanchir nation exaucer glorieux coffre dossier sevrage éclore peigne fureur bronzer rivière taureau voguer trahir aisance muter sonde géomètre femme annuel biopsie fragile
+```
 
-Revealed seed phrase by entering the above mnemonic and the password:
+### Example 3: Revealing obscured seed phrases
 
-`liberty essay coral into wing ceiling pulp obscure harvest pond smoke birth horn skate lunch harsh lunch slogan news canvas adjust scorpion grace plunge`
+Parameters:
+- Seed phrase(s):
 
-### Example 2: Password protected; split into three; random translation
+```
+ながい みりょく おどり べんごし ぬめり ていさつ おかわり おくじょう りきせつ すあな へいてん うなる そせい すいようび ひんしゅ みのう すらすら こすう さみしい うれしい かなざわし ねむい あずかる てつづき
+熊 鬼 都 賣 遍 冶 往 必 弄 點 審 號 錠 君 偶 溪 行 魯 篇 式 溝 嘆 功 子
+climat blanchir nation exaucer glorieux coffre dossier sevrage éclore peigne fureur bronzer rivière taureau voguer trahir aisance muter sonde géomètre femme annuel biopsie fragile
+zamotat anketa masopust povstat pikle rachot matrika montovat dnes nadobro kapalina okrasa emise svatba klec pianista nejprve sobota mazanec zdivo ofina nominace otrhat lepenka
+```
+- Password: `ObscureMe!`
+- Salt: `genesis block`
+- Iteration: `25000`
 
-Generated 12 words mnemonic:
-
-`alcohol sweet wool easily script lumber three begin satoshi timber aerobic bitter`
-
-Obscured with password `ObscureMe!`, split into 3, using random language translation:
-
-Split mnemonic #1 (Indonesian)
-
-`grup moral serpih makin marga butuh gagah mujur takar tertib epoksi perisai`
-
-Split mnemonic #2 (Spanish)
-
-`lámpara mamut juzgar pauta amante repetir ronco asistir tiza paloma lista historia`
-
-Split mnemonic #3 (Italian)
-
-`ruolo aragosta dedicato omissione movimento dentro vitello fortezza apatico verruca ridurre finanza`
-
-Revealed seed phrase by entering the above mnemonics in sequence and the password:
-
-`alcohol sweet wool easily script lumber three begin satoshi timber aerobic bitter`
-
-### Example 3: Password protected; split into two; French translation
-
-Generated 24 words mnemonic:
-
-`olympic blur derive clip mandate harvest lake question rack put turkey media enable pass wide spirit crystal admit all toe imitate circle once approve`
-
-Obscured with password `ObscureMe!`, split into 2, using French language translation:
-
-`tissu papoter polygone résultat tiède mouvant dimanche poteau prodige fédérer domicile banlieue abdiquer histoire station cadeau nuancer méconnu étagère enlever affiche tiède implorer reprise`
-
-`éprouver enzyme poumon éduquer soucieux vaillant infliger rompre école jambe unitaire goudron pourpre viseur glorieux justice zeste mobile ovation suricate tarif causer douter uranium`
-
-Revealed seed phrase by entering the above mnemonics in sequence and the password:
-
-`olympic blur derive clip mandate harvest lake question rack put turkey media enable pass wide spirit crystal admit all toe imitate circle once approve`
+Revealed seed phrase (same mnemonic as Example 2):
+```
+sword oak page attack venture mountain ramp treat heavy level obscure resemble surround coach leaf comfort boat nuclear bunker minor picnic exhaust embark roof
+```
 
 ## BIP39
 
 [BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) describes the implementation of a mnemonic code or mnemonic sentence, a group of easy-to-remember words, for the generation of deterministic wallets.
 
-You can add your wordlists as a plain text file in the `bip39` directory and then adjust the `config.php` file to list the new wordlists file. Please ensure to back up your custom wordlists if you do so.
-
-For the characteristics of a valid mnemonic word, visit [What is BIP39 mnemonic phrase?](https://getcoinplate.com/blog/what-is-bip39-mnemonic-phrase-2022-update/).
+You can add your wordlists as a plain text file in the `app/bip39` directory and then adjust the `app/config.php` file to list the new wordlists file. Please ensure to **back up your custom wordlists file** if you do so. For the characteristics of a valid mnemonic word, visit [What is BIP39 mnemonic phrase?](https://getcoinplate.com/blog/what-is-bip39-mnemonic-phrase-2022-update/).
 
 Wordlists files provided:
 
-- [English](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt) - `bip39/en.txt` (default)
 - [Czech](https://github.com/bitcoin/bips/blob/master/bip-0039/czech.txt) - `bip39/cs.txt`
+- [English](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt) - `bip39/en.txt` **(default)**
 - [Spanish](https://github.com/bitcoin/bips/blob/master/bip-0039/spanish.txt) - `bip39/es.txt`
 - [French](https://github.com/bitcoin/bips/blob/master/bip-0039/french.txt) - `bip39/fr.txt`
-- [Indonesian](https://github.com/Adiset/Mnemonik-Bahasa-Indonesia/blob/master/Mnemonik.txt) - `bip39/id.txt`
 - [Italian](https://github.com/bitcoin/bips/blob/master/bip-0039/italian.txt) - `bip39/it.txt`
+- [Japanese](https://github.com/bitcoin/bips/blob/master/bip-0039/japanese.txt) - `bip39/ja.txt`
+- [Korean](https://github.com/bitcoin/bips/blob/master/bip-0039/korean.txt) - `bip39/ko.txt`
+- [Portuguese](https://github.com/bitcoin/bips/blob/master/bip-0039/portuguese.txt) - `bip39/pt.txt`
+- [Chinese (Simplified)](https://github.com/bitcoin/bips/blob/master/bip-0039/chinese_simplified.txt) - `bip39/zh_cn.txt`
+- [Chinese (Traditional)](https://github.com/bitcoin/bips/blob/master/bip-0039/chinese_traditional.txt) - `bip39/zh_tw.txt`
 
 ## Libraries
 
+- [bitcoin-php/bitcoin-ecdsa](https://github.com/BitcoinPHP/BitcoinECDSA.php): Elliptic Curve Digital Signature Algorithm library for PHP.
 - [bitwasp/bitcoin](https://github.com/Bit-Wasp/bitcoin-php): Bitcoin library for PHP.
-- [html2canvas](https://html2canvas.hertzen.com/): Capture mnemonic and QR code as an image for the web version.
-- [milon/barcode](https://github.com/milon/barcode): Generate QR codes for the web version.
+- [html2canvas](https://html2canvas.hertzen.com/): Capture a container in a document as an image for the web version.
+- [jquery](https://jquery.com/): JavaScript utility library for the web version.
+- [milon/barcode](https://github.com/milon/barcode): Generate QR code for the web version.
+
+Buy me a coffee with my [Starname profile](https://app.starname.me/profile/*rarioj).

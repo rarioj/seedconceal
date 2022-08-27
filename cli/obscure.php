@@ -2,146 +2,81 @@
 
 declare(strict_types=1);
 error_reporting(E_ALL ^ E_DEPRECATED);
+set_time_limit(0);
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../app/SeedConceal.php';
 
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Bitcoin\Crypto\Random\Random;
-use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
+$sc = new SeedConcealCli();
+$default_hash_salt = $sc->getConfig('default_hash_salt');
+$default_hash_iteration = $sc->getConfig('default_hash_iteration');
+$default_split = $sc->getConfig('default_split');
+$languages = $sc->getConfig('languages');
+$random_language = $sc->getConfig('random_language');
+$default_language = $sc->getConfig('default_language');
 
-$config = require_once __DIR__ . '/../config.php';
-$default_split = 1;
-$default_lang = 'en';
-$cbold = "\033[1m";
-$cnorm = "\033[0m";
-$random = new Random();
-$bip39 = MnemonicFactory::bip39();
-$final = $final_en = [];
+$sc->printHeading('INPUT');
 
-echo PHP_EOL;
-$mnemonic = readline('Enter valid mnemonic: ');
-if (empty($mnemonic)) {
-  echo 'ERROR: Valid mnemonic is empty' . PHP_EOL;
+echo '[?] Enter the seed phrase.' . PHP_EOL;
+$input_mnemonic = readline('[>] ');
+if (empty($input_mnemonic)) {
+  echo '[E] A seed phrase is required.' . PHP_EOL;
   exit;
 }
 
-echo PHP_EOL;
-$password = readline('Enter password: ');
-if (empty($password)) {
-  echo 'ERROR: Password is empty' . PHP_EOL;
+$input_translated = $sc->parseMnemonicInput([$input_mnemonic]);
+if (empty($input_translated[0]['lang_id'])) {
+  echo '[E] Unable to determine the seed phrase language.' . PHP_EOL;
+  exit;
+}
+if (empty($input_translated[0]['private_key'])) {
+  echo '[E] The input seed phrase is not valid.' . PHP_EOL;
   exit;
 }
 
-echo PHP_EOL;
-$split = readline('Split into? (default 1): ');
-if (empty($split) || empty($config['splits'][$split])) {
-  echo 'Using default split: ' . $default_split . PHP_EOL;
-  $split = $default_split;
-}
-
-echo PHP_EOL;
-echo 'Enter "-" excluding the quote to use a random language' . PHP_EOL;
-$lang = readline('Language output [-|' . implode('|', array_keys($config['languages'])) . '] (default en): ');
-if (empty($lang) || empty($config['languages'][$lang])) {
-  if ($lang !== '-') {
-    echo 'Using default language: ' . $default_lang . PHP_EOL;
-    $lang = $default_lang;
+echo '[?] Enter a password (optional but strongly recommended).' . PHP_EOL;
+$input_password = readline('[>] ');
+$input_salt = '';
+$input_iteration = 0;
+if (!empty($input_password)) {
+  echo '[?] Enter a salt (default ' . $default_hash_salt . ').' . PHP_EOL;
+  $input_salt = readline('[>] ');
+  if (empty($input_salt)) {
+    echo '[I] Using default salt: ' . $default_hash_salt . PHP_EOL;
+    $input_salt = $default_hash_salt;
+  }
+  echo '[?] Enter the number of hashing iteration (default ' . $default_hash_iteration . ').' . PHP_EOL;
+  $input_iteration = (int) readline('[>] ');
+  if (empty($input_iteration) || $input_iteration <= 0) {
+    echo '[I] Using default iteration: ' . $default_hash_iteration . PHP_EOL;
+    $input_iteration = $default_hash_iteration;
   }
 }
 
-$mnemonic_input = preg_split('/[\s]+/', $mnemonic);
-$mnemonic_input = array_filter($mnemonic_input);
-
-$dictionaries = [];
-$dictionaries['en'] = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/en.txt'));
-foreach ($config['languages'] as $lang_id => $lang_label) {
-  if ($lang_id === 'en') {
-    continue;
-  }
-  $wordlists = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/' . $lang_id . '.txt'));
-  $dictionaries[$lang_id] = array_combine($wordlists, $dictionaries['en']);
+echo '[?] Enter the number of the split (default ' . $default_split . ').' . PHP_EOL;
+$input_split = (int) readline('[>] ');
+if (empty($input_split) || $input_split < 0) {
+  echo '[I] Using default split: ' . $default_split . PHP_EOL;
+  $input_split = $default_split;
 }
-$dictionaries['en'] = array_combine($dictionaries['en'], $dictionaries['en']);
 
-$mnemonic_lang_id = $mnemonic_lang_label = '';
-$mnemonic_lang_count = 0;
-$mnemonic_words = [];
-foreach ($config['languages'] as $lang_id => $lang_label) {
-  $mnemonic_lang_id = $mnemonic_lang_label = '';
-  $mnemonic_lang_count = 0;
-  $mnemonic_words = [];
-  foreach ($mnemonic_input as $mnemonic_word) {
-    if (!empty($dictionaries[$lang_id][$mnemonic_word])) {
-      $mnemonic_lang_id = $lang_id;
-      $mnemonic_lang_label = $lang_label;
-      $mnemonic_lang_count++;
-      $mnemonic_words[] = $dictionaries[$lang_id][$mnemonic_word];
-    } else {
-      break;
-    }
-  }
-  if ($mnemonic_lang_count === count($mnemonic_input)) {
-    break;
+echo '[?] Enter the language output [' . $random_language . '|' . implode('|', array_keys($languages)) . '] (default ' . $default_language . ').' . PHP_EOL;
+$input_language = readline('[>] ');
+if (empty($input_language) || empty($languages[$input_language])) {
+  if ($input_language !== $random_language) {
+    echo '[I] Using default language: ' . $default_language . PHP_EOL;
+    $input_language = $default_language;
   }
 }
 
-if (empty($mnemonic_words)) {
-  echo 'ERROR: Unable to determine mnemonic language';
-  exit;
+$sc->printHeading('OUTPUT');
+
+$translated = $input_translated[0];
+$sc->setSize($translated['byte_size']);
+if (!empty($input_password)) {
+  $input_password = $sc->hashText($input_password, $input_salt, $input_iteration);
 }
-
-$available_sizes = array_flip($config['sizes']);
-$byte_size = $available_sizes[count($mnemonic_words)] * 2;
-
-$mnemonic_input = implode(' ', $mnemonic_words);
-$entropy_mnemonic = $bip39->mnemonicToEntropy($mnemonic_input)->getHex();
-
-$entropy_password = bin2hex($password);
-$entropy_password = str_pad($entropy_password, $byte_size, $entropy_password, STR_PAD_LEFT);
-$entropy_password = substr(hash('sha256', $entropy_password), 0, $byte_size);
-
-$entropy_xored = gmp_strval(gmp_xor(gmp_init('0x' . $entropy_mnemonic), gmp_init('0x' . $entropy_password)), 16);
-$entropy_xored = str_pad($entropy_xored, $byte_size, '0', STR_PAD_LEFT);
-
-$entropy_buffer = Buffer::hex($entropy_xored, $byte_size / 2);
-$final_en[0] = $bip39->entropyToMnemonic($entropy_buffer);
-
-for ($i = 1; $i < $split; $i++) {
-  $entropy_password = substr(hash('sha256', $entropy_password), 0, $byte_size);
-  $entropy_xored = gmp_strval(gmp_xor(gmp_init('0x' . $entropy_xored), gmp_init('0x' . $entropy_password)), 16);
-  $entropy_xored = str_pad($entropy_xored, $byte_size, '0', STR_PAD_LEFT);
-  $entropy_buffer = Buffer::hex($entropy_xored, $byte_size / 2);
-  $final_en[$i] = $bip39->entropyToMnemonic($entropy_buffer);
-}
-
-if (!empty($final_en)) {
-  if ($lang !== 'en') {
-    foreach ($final_en as $split_mnemonic_index => $split_mnemonic_string) {
-      $mstring = preg_split('/[\s]+/', $split_mnemonic_string);
-      $mstring = array_filter($mstring);
-      $mlang = $lang;
-      if ($mlang === '-') {
-        $mlang = array_rand($config['languages'], 1);
-      }
-      $fdictionaries = array_flip($dictionaries[$mlang]);
-      $mnemonic_final = [];
-      foreach ($mstring as $mstring_val) {
-        $mnemonic_final[] = $fdictionaries[$mstring_val];
-      }
-      $final[$split_mnemonic_index] = implode(' ', $mnemonic_final);
-    }
-  } else {
-    $final = $final_en;
-  }
-}
-
-if (!empty($final)) {
-  echo PHP_EOL;
-  echo 'Mnemonic words: ' . PHP_EOL;
-  foreach ($final as $index => $mnemonic) {
-    echo PHP_EOL;
-    echo 'Sequence #' . ($index + 1) . ':' . PHP_EOL;
-    echo $cbold . $mnemonic . $cnorm . PHP_EOL;
-  }
-  echo PHP_EOL;
+$output_keys = $sc->obscureKeys($translated['private_key'], $input_password, $input_split);
+foreach ($output_keys as $private_key) {
+  $sc->printKeyDetails($private_key, $input_language);
 }

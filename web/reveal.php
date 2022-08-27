@@ -2,122 +2,52 @@
 
 declare(strict_types=1);
 error_reporting(E_ALL ^ E_DEPRECATED);
+set_time_limit(0);
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../app/SeedConceal.php';
 
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
-use Milon\Barcode\DNS2D;
+$sc = new SeedConcealWeb();
+$default_hash_salt = $sc->getConfig('default_hash_salt');
+$default_hash_iteration = $sc->getConfig('default_hash_iteration');
 
-$config = require_once __DIR__ . '/../config.php';
-$label = filter_input(INPUT_POST, 'label', FILTER_DEFAULT);
-$mnemonic = filter_input(INPUT_POST, 'mnemonic', FILTER_DEFAULT);
-$password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
+$input_label = filter_input(INPUT_POST, 'label', FILTER_DEFAULT);
+$input_mnemonic = filter_input(INPUT_POST, 'mnemonic', FILTER_DEFAULT);
+$input_password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
+$input_salt = filter_input(INPUT_POST, 'salt', FILTER_DEFAULT);
+$input_iteration = (int) filter_input(INPUT_POST, 'iteration', FILTER_SANITIZE_NUMBER_INT);
 
-$bip39 = MnemonicFactory::bip39();
-$final_en = '';
-$image_en = null;
-$error = false;
-
-if (empty($mnemonic)) {
-  $logs[] = '<strong>ERROR:</strong> Obscured mnemonic is empty';
-  $error = true;
+if (empty($input_mnemonic)) {
+  die('[E] A seed phrase is required.');
 }
-if (empty($password)) {
-  $logs[] = '<strong>ERROR:</strong> Password is empty';
-  $error = true;
-}
-if (!empty($mnemonic) && !empty($password)) {
-  $logs[] = 'Extracting obscured mnemonic';
-  $mnemonic_lines = explode(PHP_EOL, $mnemonic);
-  $mnemonic_lines = array_filter($mnemonic_lines);
-  $mnemonic_input_all = [];
-  foreach ($mnemonic_lines as $mnemonic_line) {
-    $mnemonic_temp = preg_split('/[\s]+/', $mnemonic_line);
-    $mnemonic_temp = array_filter($mnemonic_temp);
-    $mnemonic_input_all[] = $mnemonic_temp;
-  }
-  $mnemonic_input_all = array_filter($mnemonic_input_all);
-  $mnemonic_input_all = array_values($mnemonic_input_all);
 
-  $logs[] = 'Populating dictionaries';
-  $dictionaries = [];
-  $dictionaries['en'] = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/en.txt'));
-  foreach ($config['languages'] as $lang_id => $lang_label) {
-    if ($lang_id === 'en') {
-      continue;
-    }
-    $wordlists = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/' . $lang_id . '.txt'));
-    $dictionaries[$lang_id] = array_combine($wordlists, $dictionaries['en']);
+$input_translated_all = $sc->parseMnemonicInput(explode(PHP_EOL, $input_mnemonic));
+$output_key = '';
+foreach ($input_translated_all as $index => $input_translated) {
+  if (empty($input_translated['lang_id'])) {
+    die('[E] Unable to determine the seed phrase language.');
+    exit;
   }
-  $dictionaries['en'] = array_combine($dictionaries['en'], $dictionaries['en']);
-
-  $logs[] = 'Determining mnemonic language';
-  $mnemonic_lang_id = $mnemonic_lang_label = $mnemonic_lang_count = $mnemonic_words = [];
-  foreach ($mnemonic_input_all as $index => $mnemonic_input) {
-    foreach ($config['languages'] as $lang_id => $lang_label) {
-      $mnemonic_lang_id[$index] = '';
-      $mnemonic_lang_label[$index] = '';
-      $mnemonic_lang_count[$index] = 0;
-      $mnemonic_words[$index] = [];
-      foreach ($mnemonic_input as $mnemonic_word) {
-        if (!empty($dictionaries[$lang_id][$mnemonic_word])) {
-          $mnemonic_lang_id[$index] = $lang_id;
-          $mnemonic_lang_label[$index] = $lang_label;
-          $mnemonic_lang_count[$index]++;
-          $mnemonic_words[$index][] = $dictionaries[$lang_id][$mnemonic_word];
-        } else {
-          break;
-        }
-      }
-      if ($mnemonic_lang_count[$index] === count($mnemonic_input_all[$index])) {
-        $logs[] = 'Mnemonic language #' . ($index + 1) . ' found: <em>' . $mnemonic_lang_label[$index] . '</em>';
-        break;
-      }
-    }
+  if (empty($input_translated['private_key'])) {
+    die('[E] The input seed phrase is not valid.');
+    exit;
   }
-
-  if (empty($mnemonic_words)) {
-    $logs[] = '<strong>ERROR:</strong> Unable to determine mnemonic language';
-    $error = true;
+  $sc->setSize($input_translated['byte_size']);
+  if (empty($output_key)) {
+    $output_key = $input_translated['private_key'];
   } else {
-    $available_sizes = array_flip($config['sizes']);
-    $byte_size = $available_sizes[count($mnemonic_words[0])] * 2;
-
-    $entropy_password = bin2hex($password);
-    $entropy_password = str_pad($entropy_password, $byte_size, $entropy_password, STR_PAD_LEFT);
-    $entropy_passwords = [];
-    for ($i = 0; $i < count($mnemonic_words); $i++) {
-      $entropy_password = substr(hash('sha256', $entropy_password), 0, $byte_size);
-      $entropy_passwords[] = $entropy_password;
-    }
-
-    $mnemonic_words = array_reverse($mnemonic_words);
-    $entropy_passwords = array_reverse($entropy_passwords);
-
-    $entropy_xored = null;
-    foreach ($mnemonic_words as $index => $mnemonic_word) {
-      $mnemonic_input = implode(' ', $mnemonic_word);
-      $entropy_mnemonic = $bip39->mnemonicToEntropy($mnemonic_input)->getHex();
-      $logs[] = 'Mnemonic password hex #' . ($index + 1) . ': ' . $entropy_passwords[$index];
-      $entropy_xored = gmp_strval(gmp_xor(gmp_init('0x' . $entropy_mnemonic), gmp_init('0x' . $entropy_passwords[$index])), 16);
-      $entropy_xored = str_pad($entropy_xored, $byte_size, '0', STR_PAD_LEFT);
-      $logs[] = 'Mnemonic XOR hex #' . ($index + 1) . ': ' . $entropy_xored;
-    }
-
-    $entropy_buffer = Buffer::hex($entropy_xored, $byte_size / 2);
-    $final_en = $bip39->entropyToMnemonic($entropy_buffer);
-
-    if (!empty($final_en)) {
-      $logs[] = 'Generating QR code';
-      $barcode = new DNS2D();
-      $barcode->setStorPath(__DIR__ . '/../cache/');
-      $image_en = $barcode->getBarcodePNG($final_en, 'QRCODE');
-    }
-
-    $logs[] = 'All done!';
+    $output_key = $sc->xorKeys($output_key, $input_translated['private_key']);
   }
 }
+
+if (!empty($input_password)) {
+  $input_password = $sc->hashText($input_password, $input_salt, $input_iteration);
+  $private_key = $sc->xorKeys($output_key, $input_password);
+} else {
+  $private_key = $output_key;
+}
+
+$detail = $sc->getKeyDetails($private_key);
 
 ?>
 <!doctype html>
@@ -130,27 +60,21 @@ if (!empty($mnemonic) && !empty($password)) {
 </head>
 
 <body>
-  <div id="capture1" class="sc-container sc-first">
+  <div class="sc-container sc-first">
     <div class="sc-inner">
-      <?php if (!empty($label)) { ?>
-        <div class="sc-heading"><?php echo htmlspecialchars($label); ?></div>
-      <?php } ?>
-      <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $final_en; ?></p>
+      <div class="sc-heading">Details</div>
+      <?php $sc->printDetails($detail); ?>
     </div>
-    <img src="data:image/png;base64,<?php echo $image_en; ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
   </div>
-  <?php if ($config['debug'] === true) { ?>
-    <div class="sc-container">
-      <div class="sc-inner">
-        <div class="sc-heading">Debug</div>
-        <div class="sc-log">
-          <?php foreach ($logs as $log) { ?>
-            <p><?php echo $log; ?></p>
-          <?php } ?>
-        </div>
-      </div>
+  <div id="capture1" class="sc-container">
+    <div class="sc-inner">
+      <?php if (!empty($input_label)) { ?>
+        <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?></div>
+      <?php } ?>
+      <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $detail['seed_phrase']; ?></p>
     </div>
-  <?php } ?>
+    <img src="data:image/png;base64,<?php echo $sc->getQrcode($detail['seed_phrase']); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
+  </div>
   <div class="sc-canvas">
     <canvas></canvas>
   </div>

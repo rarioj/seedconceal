@@ -2,120 +2,77 @@
 
 declare(strict_types=1);
 error_reporting(E_ALL ^ E_DEPRECATED);
+set_time_limit(0);
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../app/SeedConceal.php';
 
-use BitWasp\Buffertools\Buffer;
-use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
+$sc = new SeedConcealCli();
+$default_hash_salt = $sc->getConfig('default_hash_salt');
+$default_hash_iteration = $sc->getConfig('default_hash_iteration');
 
-$config = require_once __DIR__ . '/../config.php';
-$cbold = "\033[1m";
-$cnorm = "\033[0m";
-$bip39 = MnemonicFactory::bip39();
-$mnemonic_lines = [];
-$final_en = '';
+$sc->printHeading('INPUT');
 
-echo PHP_EOL;
-$mnemonic = readline('Enter obscured mnemonic: ');
-if (empty($mnemonic)) {
-  echo 'ERROR: Obscured mnemonic is empty' . PHP_EOL;
+$input_mnemonic_all = [];
+echo '[?] Enter the seed phrase.' . PHP_EOL;
+$input_mnemonic = readline('[>] ');
+if (empty($input_mnemonic)) {
+  echo '[E] A seed phrase is required.' . PHP_EOL;
   exit;
 }
-$mnemonic_lines[] = $mnemonic;
-
-echo PHP_EOL;
-echo 'Input empty mnemonic once all sequences are entered' . PHP_EOL;
+$input_mnemonic_all[] = $input_mnemonic;
 
 do {
-  echo PHP_EOL;
-  $mnemonic = readline('Enter the next mnemonic: ');
-  $mnemonic_lines[] = $mnemonic;
-} while (!empty($mnemonic));
+  echo '[?] Enter the next seed phrase.' . PHP_EOL;
+  echo '    Leave blank once all seed phrases are entered.' . PHP_EOL;
+  $input_mnemonic = readline('[>] ');
+  $input_mnemonic_all[] = $input_mnemonic;
+} while (!empty($input_mnemonic));
 
-echo PHP_EOL;
-$password = readline('Enter password: ');
-if (empty($password)) {
-  echo 'ERROR: Password is empty' . PHP_EOL;
-  exit;
-}
-
-$mnemonic_lines = array_filter($mnemonic_lines);
-$mnemonic_input_all = [];
-foreach ($mnemonic_lines as $mnemonic_line) {
-  $mnemonic_temp = preg_split('/[\s]+/', $mnemonic_line);
-  $mnemonic_temp = array_filter($mnemonic_temp);
-  $mnemonic_input_all[] = $mnemonic_temp;
-}
-$mnemonic_input_all = array_filter($mnemonic_input_all);
-$mnemonic_input_all = array_values($mnemonic_input_all);
-
-$dictionaries = [];
-$dictionaries['en'] = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/en.txt'));
-foreach ($config['languages'] as $lang_id => $lang_label) {
-  if ($lang_id === 'en') {
-    continue;
+$input_translated_all = $sc->parseMnemonicInput($input_mnemonic_all);
+$output_key = '';
+foreach ($input_translated_all as $index => $input_translated) {
+  if (empty($input_translated['lang_id'])) {
+    echo '[E] Unable to determine the seed phrase language.' . PHP_EOL;
+    exit;
   }
-  $wordlists = explode(PHP_EOL, file_get_contents(__DIR__ . '/../bip39/' . $lang_id . '.txt'));
-  $dictionaries[$lang_id] = array_combine($wordlists, $dictionaries['en']);
-}
-$dictionaries['en'] = array_combine($dictionaries['en'], $dictionaries['en']);
-
-$mnemonic_lang_id = $mnemonic_lang_label = $mnemonic_lang_count = $mnemonic_words = [];
-foreach ($mnemonic_input_all as $index => $mnemonic_input) {
-  foreach ($config['languages'] as $lang_id => $lang_label) {
-    $mnemonic_lang_id[$index] = '';
-    $mnemonic_lang_label[$index] = '';
-    $mnemonic_lang_count[$index] = 0;
-    $mnemonic_words[$index] = [];
-    foreach ($mnemonic_input as $mnemonic_word) {
-      if (!empty($dictionaries[$lang_id][$mnemonic_word])) {
-        $mnemonic_lang_id[$index] = $lang_id;
-        $mnemonic_lang_label[$index] = $lang_label;
-        $mnemonic_lang_count[$index]++;
-        $mnemonic_words[$index][] = $dictionaries[$lang_id][$mnemonic_word];
-      } else {
-        break;
-      }
-    }
-    if ($mnemonic_lang_count[$index] === count($mnemonic_input_all[$index])) {
-      break;
-    }
+  if (empty($input_translated['private_key'])) {
+    echo '[E] The input seed phrase is not valid.' . PHP_EOL;
+    exit;
+  }
+  $sc->setSize($input_translated['byte_size']);
+  if (empty($output_key)) {
+    $output_key = $input_translated['private_key'];
+  } else {
+    $output_key = $sc->xorKeys($output_key, $input_translated['private_key']);
   }
 }
 
-if (empty($mnemonic_words)) {
-  echo 'ERROR: Unable to determine mnemonic language';
-  exit;
+echo '[?] Enter the password obscuring the seed phrase.' . PHP_EOL;
+$input_password = readline('[>] ');
+$input_salt = '';
+$input_iteration = 0;
+if (!empty($input_password)) {
+  echo '[?] Enter a salt (default ' . $default_hash_salt . ').' . PHP_EOL;
+  $input_salt = readline('[>] ');
+  if (empty($input_salt)) {
+    echo '[I] Using default salt: ' . $default_hash_salt . PHP_EOL;
+    $input_salt = $default_hash_salt;
+  }
+  echo '[?] Enter the number of hashing iteration (default ' . $default_hash_iteration . ').' . PHP_EOL;
+  $input_iteration = (int) readline('[>] ');
+  if (empty($input_iteration) || $input_iteration <= 0) {
+    echo '[I] Using default iteration: ' . $default_hash_iteration . PHP_EOL;
+    $input_iteration = $default_hash_iteration;
+  }
 }
 
-$available_sizes = array_flip($config['sizes']);
-$byte_size = $available_sizes[count($mnemonic_words[0])] * 2;
+$sc->printHeading('OUTPUT');
 
-$entropy_password = bin2hex($password);
-$entropy_password = str_pad($entropy_password, $byte_size, $entropy_password, STR_PAD_LEFT);
-$entropy_passwords = [];
-for ($i = 0; $i < count($mnemonic_words); $i++) {
-  $entropy_password = substr(hash('sha256', $entropy_password), 0, $byte_size);
-  $entropy_passwords[] = $entropy_password;
+if (!empty($input_password)) {
+  $input_password = $sc->hashText($input_password, $input_salt, $input_iteration);
+  $private_key = $sc->xorKeys($output_key, $input_password);
+} else {
+  $private_key = $output_key;
 }
-
-$mnemonic_words = array_reverse($mnemonic_words);
-$entropy_passwords = array_reverse($entropy_passwords);
-
-$entropy_xored = null;
-foreach ($mnemonic_words as $index => $mnemonic_word) {
-  $mnemonic_input = implode(' ', $mnemonic_word);
-  $entropy_mnemonic = $bip39->mnemonicToEntropy($mnemonic_input)->getHex();
-  $entropy_xored = gmp_strval(gmp_xor(gmp_init('0x' . $entropy_mnemonic), gmp_init('0x' . $entropy_passwords[$index])), 16);
-  $entropy_xored = str_pad($entropy_xored, $byte_size, '0', STR_PAD_LEFT);
-}
-
-$entropy_buffer = Buffer::hex($entropy_xored, $byte_size / 2);
-$final_en = $bip39->entropyToMnemonic($entropy_buffer);
-
-if (!empty($final_en)) {
-  echo PHP_EOL;
-  echo 'Mnemonic words: ' . PHP_EOL;
-  echo $cbold . $final_en . $cnorm . PHP_EOL;
-  echo PHP_EOL;
-}
+$sc->printKeyDetails($private_key);
