@@ -38,7 +38,7 @@ $default_language = $sc->getConfig('default_language');
         </label>
         <label for="passphrase">
           <strong>Passphrase</strong> - <small>Enter a passphrase to generate a deterministic wallet. Leave blank to generate a random wallet.</small>
-          <textarea id="passphrase" name="passphrase" rows="5"></textarea>
+          <input type="text" id="passphrase" name="passphrase">
         </label>
         <label for="salt" id="sc-label-salt">
           <strong>Salt</strong>
@@ -73,7 +73,7 @@ $default_language = $sc->getConfig('default_language');
         </label>
         <label for="mnemonic">
           <strong>Seed phrase<sup>*</sup></strong>
-          <textarea id="mnemonic" name="mnemonic" rows="5"></textarea>
+          <input type="text" id="mnemonic" name="mnemonic">
         </label>
         <label for="password">
           <strong>Password</strong> - <small>Optional but strongly recommended.</small>
