@@ -145,9 +145,8 @@ You can add custom wordlists as a plain text file in the `app/bip39` directory a
 
 ## Libraries
 
-- [bitcoin-php/bitcoin-ecdsa](https://github.com/BitcoinPHP/BitcoinECDSA.php): Elliptic Curve Digital Signature Algorithm library for PHP.
 - [bitwasp/bitcoin](https://github.com/Bit-Wasp/bitcoin-php): Bitcoin library for PHP.
 - [html2canvas](https://html2canvas.hertzen.com/): Capture a container in a document as an image for the web version.
 - [milon/barcode](https://github.com/milon/barcode): Generate QR code for the web version.
 
-###### Check out my [Starname profile](https://app.starname.me/profile/*rarioj) and buy me a ☕ or 🍺.
+###### Check out my [Starname](https://app.starname.me/profile/*rarioj) profile and buy me a ☕ or 🍺.

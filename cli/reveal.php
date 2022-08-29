@@ -61,7 +61,7 @@ if (!empty($input_password)) {
   }
   echo '[?] Enter the number of hashing iteration (default ' . $default_hash_iteration . ').' . PHP_EOL;
   $input_iteration = (int) readline('[>] ');
-  if (empty($input_iteration) || $input_iteration <= 0) {
+  if (empty($input_iteration) || $input_iteration < 0) {
     echo '[I] Using default iteration: ' . $default_hash_iteration . PHP_EOL;
     $input_iteration = $default_hash_iteration;
   }
@@ -75,4 +75,5 @@ if (!empty($input_password)) {
 } else {
   $private_key = $output_key;
 }
-$sc->printKeyDetails($private_key);
+
+$sc->printDetails($sc->getKeyDetails($private_key));

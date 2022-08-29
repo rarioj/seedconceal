@@ -1,6 +1,5 @@
 {
     "require": {
-        "bitcoin-php/bitcoin-ecdsa": "^1.3",
         "bitwasp/bitcoin": "*",
         "milon/barcode": "^9.0"
     }

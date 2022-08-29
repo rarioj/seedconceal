@@ -118,7 +118,7 @@ $default_language = $sc->getConfig('default_language');
         </label>
         <label for="reveal-mnemonic">
           <strong>Seed phrase(s)<sup>*</sup></strong>
-          <textarea id="mnemonic" name="reveal-mnemonic" rows="10"></textarea>
+          <textarea id="reveal-mnemonic" name="mnemonic" rows="10"></textarea>
           <small>&bull; Enter each seed phrase separated by newlines</small>
         </label>
         <label for="reveal-password">

@@ -4,55 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0b9100e3fa7eee56ada9c2797888bdc4",
+    "content-hash": "e50acc813a87abf05c859049e3a6d875",
     "packages": [
-        {
-            "name": "bitcoin-php/bitcoin-ecdsa",
-            "version": "1.3.5",
-            "source": {
-                "type": "git",
-                "url": "git@github.com:BitcoinPHP/BitcoinECDSA.php.git",
-                "reference": "a4d99b9f89cbd973be5fd142fe4b09f61dbddd67"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/BitcoinPHP/BitcoinECDSA.php/zipball/a4d99b9f89cbd973be5fd142fe4b09f61dbddd67",
-                "reference": "a4d99b9f89cbd973be5fd142fe4b09f61dbddd67",
-                "shasum": ""
-            },
-            "require": {
-                "ext-gmp": "*",
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "8.4.*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "BitcoinPHP\\BitcoinECDSA": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "unlicense"
-            ],
-            "authors": [
-                {
-                    "name": "BitcoinPHP",
-                    "email": "panda@panda.cat",
-                    "homepage": "http://github.com/BitcoinPHP",
-                    "role": "Developer"
-                }
-            ],
-            "description": "PHP library allowing to generate BTC addresses from private keys",
-            "homepage": "https://github.com/BitcoinPHP/BitcoinECDSA.php",
-            "keywords": [
-                "ECDSA",
-                "bitcoin"
-            ],
-            "time": "2021-02-02T00:33:50+00:00"
-        },
         {
             "name": "bitwasp/bitcoin",
             "version": "v0.0.35.2",
@@ -916,16 +869,16 @@
         },
         {
             "name": "nesbot/carbon",
-            "version": "2.61.0",
+            "version": "2.62.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/briannesbitt/Carbon.git",
-                "reference": "bdf4f4fe3a3eac4de84dbec0738082a862c68ba6"
+                "reference": "7507aec3d626797ce2123cf6c6556683be22b5f8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/bdf4f4fe3a3eac4de84dbec0738082a862c68ba6",
-                "reference": "bdf4f4fe3a3eac4de84dbec0738082a862c68ba6",
+                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/7507aec3d626797ce2123cf6c6556683be22b5f8",
+                "reference": "7507aec3d626797ce2123cf6c6556683be22b5f8",
                 "shasum": ""
             },
             "require": {
@@ -1014,7 +967,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-08-06T12:41:24+00:00"
+            "time": "2022-08-28T19:48:05+00:00"
         },
         {
             "name": "paragonie/random_compat",

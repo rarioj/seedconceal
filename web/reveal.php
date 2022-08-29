@@ -71,9 +71,9 @@ $detail = $sc->getKeyDetails($private_key);
       <?php if (!empty($input_label)) { ?>
         <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?></div>
       <?php } ?>
-      <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $detail['seed_phrase']; ?></p>
+      <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $detail['Seed Phrase']; ?></p>
     </div>
-    <img src="data:image/png;base64,<?php echo $sc->getQrcode($detail['seed_phrase']); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
+    <img src="data:image/png;base64,<?php echo $sc->getQrcode($detail['Seed Phrase']); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
   </div>
   <div class="sc-canvas">
     <canvas></canvas>

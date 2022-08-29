@@ -62,8 +62,9 @@ foreach ($output_keys as $private_key) {
       <div class="sc-heading">Details</div>
       <?php
       $mnemonic_all = [];
-      foreach ($details as $detail) {
-        $mnemonic_all[] = $detail['seed_phrase'];
+      foreach ($details as $index => $detail) {
+        echo '<strong>Sequence #' . ($index + 1) . '</strong><br />';
+        $mnemonic_all[] = $detail['Seed Phrase'];
         $sc->printDetails($detail);
       }
       ?>
@@ -75,7 +76,7 @@ foreach ($output_keys as $private_key) {
         <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?></div>
       <?php } ?>
       <?php foreach ($details as $index => $detail) { ?>
-        <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1_<?php echo $index; ?>'), { onclone: function(cloned) { cloned.getElementById('capture1_<?php echo $index; ?>').style.display = 'block'; }}).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $detail['seed_phrase']; ?></p>
+        <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1_<?php echo $index; ?>'), { onclone: function(cloned) { cloned.getElementById('capture1_<?php echo $index; ?>').style.display = 'block'; }}).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $detail['Seed Phrase']; ?></p>
       <?php } ?>
     </div>
     <img src="data:image/png;base64,<?php echo $sc->getQrcode(implode(PHP_EOL, $mnemonic_all)); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
@@ -86,9 +87,9 @@ foreach ($output_keys as $private_key) {
         <?php if (!empty($input_label)) { ?>
           <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?> &bull; <?php echo ($index + 1) . "/" . count($details); ?></div>
         <?php } ?>
-        <p><?php echo $detail['seed_phrase']; ?></p>
+        <p><?php echo $detail['Seed Phrase']; ?></p>
       </div>
-      <img src="data:image/png;base64,<?php echo $sc->getQrcode($detail['seed_phrase']); ?>" class="sc-qrcode" />
+      <img src="data:image/png;base64,<?php echo $sc->getQrcode($detail['Seed Phrase']); ?>" class="sc-qrcode" />
     </div>
   <?php } ?>
   <div class="sc-canvas">

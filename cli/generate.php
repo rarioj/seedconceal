@@ -57,4 +57,5 @@ if (!empty($input_passphrase)) {
     $private_key = $input_passphrase;
   }
 }
-$sc->printKeyDetails($private_key);
+
+$sc->printDetails($sc->getKeyDetails($private_key));

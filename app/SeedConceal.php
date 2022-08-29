@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
-use BitcoinPHP\BitcoinECDSA\BitcoinECDSA;
+use BitWasp\Bitcoin\Address\PayToPubKeyHashAddress;
+use BitWasp\Bitcoin\Address\SegwitAddress;
 use BitWasp\Bitcoin\Crypto\Random\Random;
+use BitWasp\Bitcoin\Key\Deterministic\HierarchicalKeyFactory;
+use BitWasp\Bitcoin\Mnemonic\Bip39\Bip39SeedGenerator;
 use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
+use BitWasp\Bitcoin\Network\NetworkFactory;
+use BitWasp\Bitcoin\Script\WitnessProgram;
 use BitWasp\Buffertools\Buffer;
 use Milon\Barcode\DNS2D;
 
@@ -66,21 +71,41 @@ class SeedConceal
     return $private_key;
   }
 
-  public function getEcdsaInfo($key)
+  public function getAllKeyInfo($key)
   {
-    $ecdsa = new BitcoinECDSA();
-    $ecdsa->setPrivateKey($key);
-    $public_key = $ecdsa->getPubKey();
-    $btc_address = $ecdsa->getAddress();
-    $explorer_url = '';
-    if ($ecdsa->validateAddress($btc_address)) {
-      $explorer_url = sprintf($this->config['explorer'], $btc_address);
-    }
+    $network = NetworkFactory::bitcoin();
+    $mnemonic = $this->getMnemonicFromKey($key);
+    $root = HierarchicalKeyFactory::fromEntropy((new Bip39SeedGenerator())->getSeed($mnemonic));
+    $root->derivePath("m/0/1");
+    $public_key_object = $root->getPublicKey($network);
+    $public_key_string = $public_key_object->getHex();
+    $public_key_hash = $public_key_object->getPubKeyHash();
+    //$xpriv = $root->toExtendedPrivateKey();
+    //$xpub = $root->toExtendedPublicKey();
+    $p2pkh_address = (new PayToPubKeyHashAddress($public_key_hash))->getAddress();
+    $bech32_address = (new SegwitAddress(WitnessProgram::v0($public_key_hash)))->getAddress($network);
     return [
-      'public_key' => $public_key,
-      'btc_address' => $btc_address,
-      'explorer_url' => $explorer_url,
+      'Seed Phrase' => $mnemonic,
+      'Private Key' => $key,
+      'Public Key' => $public_key_string,
+      //'Extended Private Key' => $xpriv,
+      //'Extended Public Key' => $xpub,
+      'Legacy Address' => $p2pkh_address,
+      'Bech32 Address' => $bech32_address,
     ];
+  }
+
+  public function getKeyDetails($key, $language = '')
+  {
+    $default_language = $this->getConfig('default_language');
+    if (empty($language)) {
+      $language = $default_language;
+    }
+    $info = $this->getAllKeyInfo($key);
+    if ($language !== $default_language) {
+      $info['Seed Phrase'] = $this->translateMnemonic($info['Seed Phrase'], $language);
+    }
+    return $info;
   }
 
   public function parseMnemonicInput($mnemonic_array = [])
@@ -225,22 +250,14 @@ class SeedConcealCli extends SeedConceal
     echo PHP_EOL;
   }
 
-  public function printKeyDetails($key, $language = '')
+  public function printDetails($info)
   {
-    $default_language = $this->getConfig('default_language');
-    if (empty($language)) {
-      $language = $default_language;
+    foreach ($info as $index => $value) {
+      if ($index === 'Legacy Address' || $index === 'Bech32 Address') {
+        $value = sprintf($this->getConfig('explorer'), $value);
+      }
+      $this->print($index, $value);
     }
-    $mnemonic = $this->getMnemonicFromKey($key);
-    if ($language !== $default_language) {
-      $mnemonic = $this->translateMnemonic($mnemonic, $language);
-    }
-    $ecdsa_info = $this->getEcdsaInfo($key);
-    $this->print('Private Key  ', $key);
-    $this->print('Public Key   ', $ecdsa_info['public_key']);
-    $this->print('BTC Address  ', $ecdsa_info['btc_address']);
-    $this->print('Explorer URL ', $ecdsa_info['explorer_url']);
-    $this->print('Seed Phrase  ', $mnemonic);
     echo PHP_EOL;
   }
 }
@@ -255,35 +272,16 @@ class SeedConcealWeb extends SeedConceal
     return $image;
   }
 
-  public function getKeyDetails($key, $language = '')
-  {
-    $default_language = $this->getConfig('default_language');
-    if (empty($language)) {
-      $language = $default_language;
-    }
-    $mnemonic = $this->getMnemonicFromKey($key);
-    if ($language !== $default_language) {
-      $mnemonic = $this->translateMnemonic($mnemonic, $language);
-    }
-    $ecdsa_info = $this->getEcdsaInfo($key);
-    return [
-      'private_key' => $key,
-      'public_key' => $ecdsa_info['public_key'],
-      'btc_address' => $ecdsa_info['btc_address'],
-      'explorer_url' => $ecdsa_info['explorer_url'],
-      'seed_phrase' => $mnemonic,
-    ];
-  }
-
-  public function printDetails($details)
+  public function printDetails($info)
   {
     echo '<dl>';
-    echo '<dt><strong>Private Key:</strong></dt>';
-    echo '<dd>' . $details['private_key'] . '</dd>';
-    echo '<dt><strong>Public Key:</strong></dt>';
-    echo '<dd>' . $details['public_key'] . '</dd>';
-    echo '<dt><strong>BTC Address:</strong></dt>';
-    echo '<dd><a href="' . $details['explorer_url'] . '" target="_blank">' . $details['btc_address'] . '</a></dd>';
+    foreach ($info as $index => $value) {
+      if ($index === 'Legacy Address' || $index === 'Bech32 Address') {
+        $value = '<a href="' . sprintf($this->getConfig('explorer'), $value) .  '" target="_blank">' . $value . '</a>';
+      }
+      echo '<dt><strong>' . $index . '</strong></dt>';
+      echo '<dd>' . $value . '</dd>';
+    }
     echo '</dl>';
   }
 }

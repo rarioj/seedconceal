@@ -47,7 +47,7 @@ if (!empty($input_password)) {
   }
   echo '[?] Enter the number of hashing iteration (default ' . $default_hash_iteration . ').' . PHP_EOL;
   $input_iteration = (int) readline('[>] ');
-  if (empty($input_iteration) || $input_iteration <= 0) {
+  if (empty($input_iteration) || $input_iteration < 0) {
     echo '[I] Using default iteration: ' . $default_hash_iteration . PHP_EOL;
     $input_iteration = $default_hash_iteration;
   }
@@ -76,7 +76,8 @@ $sc->setSize($translated['byte_size']);
 if (!empty($input_password)) {
   $input_password = $sc->hashText($input_password, $input_salt, $input_iteration);
 }
-$output_keys = $sc->obscureKeys($translated['private_key'], $input_password, $input_split);
-foreach ($output_keys as $private_key) {
-  $sc->printKeyDetails($private_key, $input_language);
+$private_keys = $sc->obscureKeys($translated['private_key'], $input_password, $input_split);
+foreach ($private_keys as $index => $private_key) {
+  $sc->print('Sequence', '#' . ($index + 1));
+  $sc->printDetails($sc->getKeyDetails($private_key, $input_language));
 }
