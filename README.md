@@ -21,6 +21,8 @@ By creating an air-gapped system, you can guarantee that your operating system w
 
 #### Web Mode
 
+![SeedConceal Web Mode](app/images/seedconceal-web.png)
+
 ```
 cd web
 php -S localhost:9000
@@ -31,6 +33,8 @@ Open a web browser and then go to `http://localhost:9000/`. You can adjust the p
 On the web version, clicking on the generated seed phrases or the QR codes will allow you to capture the seed phrase card and save it as an image.
 
 #### CLI Mode
+
+![SeedConceal CLI Mode](app/images/seedconceal-cli.png)
 
 ```
 php cli/generate.php
