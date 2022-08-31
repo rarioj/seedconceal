@@ -2,116 +2,94 @@
 
 declare(strict_types=1);
 
-use BitWasp\Bitcoin\Address\PayToPubKeyHashAddress;
-use BitWasp\Bitcoin\Address\SegwitAddress;
+use BitWasp\Bitcoin\Bitcoin;
 use BitWasp\Bitcoin\Crypto\Random\Random;
 use BitWasp\Bitcoin\Key\Deterministic\HierarchicalKeyFactory;
 use BitWasp\Bitcoin\Mnemonic\Bip39\Bip39SeedGenerator;
 use BitWasp\Bitcoin\Mnemonic\MnemonicFactory;
-use BitWasp\Bitcoin\Network\NetworkFactory;
-use BitWasp\Bitcoin\Script\WitnessProgram;
 use BitWasp\Buffertools\Buffer;
 use Milon\Barcode\DNS2D;
 
 class SeedConceal
 {
-  protected $config;
-  protected $bip39;
-  protected $size;
-  protected $wordlists;
+  protected $_address;
+  protected $_config;
+  protected $_size;
+  protected $_wordlists;
 
-  public function __construct($config_file = __DIR__ . '/config.php')
+  public function __construct()
   {
-    $this->config = require_once $config_file;
-    $this->bip39 = MnemonicFactory::bip39();
-    $this->wordlists = $this->getWordlists(__DIR__ . '/bip39/');
-    $this->setSize($this->getConfig('default_size'));
+    $this->_address = require_once __DIR__ . '/address.php';
+    $this->_config = require_once __DIR__ . '/config.php';
+    $this->_wordlists = $this->wordlists(__DIR__ . '/bip39/');
+    $this->size($this->config('default_size'));
   }
 
-  public function getConfig($name = '')
+  public function config($name = '')
   {
     if (!empty($name)) {
-      if (isset($this->config[$name])) {
-        return $this->config[$name];
+      if (isset($this->_config[$name])) {
+        return $this->_config[$name];
+      } else {
+        return null;
       }
-    } else {
-      return $this->config;
     }
-    return null;
+    return $this->_config;
   }
 
-  public function getSize()
+  public function size($size = 0)
   {
-    return $this->size;
+    $sizes = $this->config('sizes');
+    if (!empty($size) && !empty($sizes[$size])) {
+      $this->_size = $size;
+    }
+    return $this->_size;
   }
 
-  public function setSize($size)
+  public function entropy()
   {
-    $this->size = $size;
-  }
-
-  public function getRandomKey()
-  {
+    $adapter = Bitcoin::getEcAdapter();
     $random = new Random();
-    $entropy = $random->bytes($this->getSize());
-    $private_key = $entropy->getHex();
-    return $private_key;
+    do {
+      $buffer = $random->bytes($this->size());
+    } while (!$adapter->validatePrivateKey($buffer));
+    return $buffer->getHex();
   }
 
-  public function getMnemonicFromKey($key)
+  public function details($entropy)
   {
-    $entropy = Buffer::hex($key, $this->getSize());
-    $mnemonic = $this->bip39->entropyToMnemonic($entropy);
-    return $mnemonic;
-  }
-
-  public function getKeyFromMnemonic($mnemonic)
-  {
-    $private_key = $this->bip39->mnemonicToEntropy($mnemonic)->getHex();
-    return $private_key;
-  }
-
-  public function getAllKeyInfo($key)
-  {
-    $network = NetworkFactory::bitcoin();
-    $mnemonic = $this->getMnemonicFromKey($key);
-    $root = HierarchicalKeyFactory::fromEntropy((new Bip39SeedGenerator())->getSeed($mnemonic));
-    $root->derivePath("m/0/1");
-    $public_key_object = $root->getPublicKey($network);
-    $public_key_string = $public_key_object->getHex();
-    $public_key_hash = $public_key_object->getPubKeyHash();
-    //$xpriv = $root->toExtendedPrivateKey();
-    //$xpub = $root->toExtendedPublicKey();
-    $p2pkh_address = (new PayToPubKeyHashAddress($public_key_hash))->getAddress();
-    $bech32_address = (new SegwitAddress(WitnessProgram::v0($public_key_hash)))->getAddress($network);
-    return [
-      'Seed Phrase' => $mnemonic,
-      'Private Key' => $key,
-      'Public Key' => $public_key_string,
-      //'Extended Private Key' => $xpriv,
-      //'Extended Public Key' => $xpub,
-      'Legacy Address' => $p2pkh_address,
-      'Bech32 Address' => $bech32_address,
-    ];
-  }
-
-  public function getKeyDetails($key, $language = '')
-  {
-    $default_language = $this->getConfig('default_language');
-    if (empty($language)) {
-      $language = $default_language;
+    $details = [];
+    $buffer = Buffer::hex($entropy, $this->size());
+    $mnemonic = MnemonicFactory::bip39()->entropyToMnemonic($buffer);
+    $seed = (new Bip39SeedGenerator())->getSeed($mnemonic);
+    $root = HierarchicalKeyFactory::fromEntropy($seed);
+    $xpriv = $root->toExtendedPrivateKey();
+    $details['Seed Phrase'] = $mnemonic;
+    $details['Seed Hex'] = $seed->getHex();
+    $details['Entropy'] = $entropy;
+    $details['Root Ext. Private'] = $xpriv;
+    $details['Root Ext. Public'] = $root->toExtendedPublicKey();
+    $details['Root Private'] = $root->getPrivateKey()->getHex();
+    $details['Root Public'] = $root->getPublicKey()->getHex();
+    $details['Root WIF'] = $root->getPrivateKey()->toWif();
+    foreach ($this->_address as $label => $derivation) {
+      $derived = HierarchicalKeyFactory::fromExtended($xpriv)->derivePath($derivation['path']);
+      $hash = $derived->getPublicKey()->getPubKeyHash();
+      $format = $derivation['format'];
+      $details[$label][$format . ' Ext. Private'] = $derived->toExtendedPrivateKey();
+      $details[$label][$format . ' Ext. Public'] = $derived->toExtendedPublicKey();
+      $details[$label][$format . ' Private'] = $derived->getPrivateKey()->getHex();
+      $details[$label][$format . ' Public'] = $derived->getPublicKey()->getHex();
+      $details[$label][$format . ' WIF'] = $derived->getPrivateKey()->toWif();
+      $details[$label][$format . ' Address'] = $derivation['callback']($hash);
     }
-    $info = $this->getAllKeyInfo($key);
-    if ($language !== $default_language) {
-      $info['Seed Phrase'] = $this->translateMnemonic($info['Seed Phrase'], $language);
-    }
-    return $info;
+    return $details;
   }
 
-  public function parseMnemonicInput($mnemonic_array = [])
+  public function parse($mnemonic_array = [])
   {
-    $languages = $this->getConfig('languages');
-    $sizes = $this->getConfig('sizes');
+    $languages = $this->config('languages');
+    $sizes = $this->config('sizes');
     $sizes = array_flip($sizes);
     $mnemonic_array = array_filter($mnemonic_array);
     $mnemonic_input = [];
@@ -130,13 +108,13 @@ class SeedConceal
         $translated[$index]['word_count'] = 0;
         $translated[$index]['mnemonic'] = [];
         $translated[$index]['byte_size'] = 0;
-        $translated[$index]['private_key'] = '';
+        $translated[$index]['entropy'] = '';
         foreach ($mnemonic_item as $mnemonic_word) {
-          if (!empty($this->wordlists[$lang_id][$mnemonic_word])) {
+          if (!empty($this->_wordlists[$lang_id][$mnemonic_word])) {
             $translated[$index]['lang_id'] = $lang_id;
             $translated[$index]['lang_label'] = $lang_label;
             $translated[$index]['word_count']++;
-            $translated[$index]['mnemonic'][] = $this->wordlists[$lang_id][$mnemonic_word];
+            $translated[$index]['mnemonic'][] = $this->_wordlists[$lang_id][$mnemonic_word];
           } else {
             break;
           }
@@ -144,7 +122,7 @@ class SeedConceal
         if ($translated[$index]['word_count'] === count($mnemonic_input[$index])) {
           $translated[$index]['mnemonic'] = implode(' ', $translated[$index]['mnemonic']);
           $translated[$index]['byte_size'] = $sizes[$translated[$index]['word_count']];
-          $translated[$index]['private_key'] = $this->getKeyFromMnemonic($translated[$index]['mnemonic']);
+          $translated[$index]['entropy'] = MnemonicFactory::bip39()->mnemonicToEntropy($translated[$index]['mnemonic'])->getHex();
           break;
         }
       }
@@ -152,16 +130,15 @@ class SeedConceal
     return $translated;
   }
 
-  public function translateMnemonic($mnemonic, $language)
+  public function translate($mnemonic, $language)
   {
-    $random_language = $this->getConfig('random_language');
     $mnemonic = preg_split('/[\s]+/', $mnemonic);
     $mnemonic = array_filter($mnemonic);
     $selected_language = $language;
-    if ($selected_language === $random_language) {
-      $selected_language = array_rand($this->getConfig('languages'), 1);
+    if ($selected_language === $this->config('random_language')) {
+      $selected_language = array_rand($this->config('languages'), 1);
     }
-    $wordlists = array_flip($this->wordlists[$selected_language]);
+    $wordlists = array_flip($this->_wordlists[$selected_language]);
     $new_mnemonic = [];
     foreach ($mnemonic as $word) {
       $new_mnemonic[] = $wordlists[$word];
@@ -169,50 +146,45 @@ class SeedConceal
     return implode(' ', $new_mnemonic);
   }
 
-  public function hashText($text, $salt = '', $iteration = 0)
+  public function hash($text, $salt = '', $iteration = 0)
   {
-    $default_hash_salt = $this->getConfig('default_hash_salt');
-    $default_hash_iteration = $this->getConfig('default_hash_iteration');
-    if (empty($salt)) {
-      $salt = $default_hash_salt;
+    if (!empty($salt) && !empty($iteration)) {
+      $hash = hash_pbkdf2('sha256', $text, $salt, $iteration, $this->size() * 2);
+    } else {
+      $hash = substr(hash('sha256', $text), 0, $this->size() * 2);
     }
-    if (empty($iteration) || $iteration <= 0) {
-      $iteration = $default_hash_iteration;
-    }
-    $text = hash_pbkdf2('sha256', $text, $salt, $iteration, $this->getSize() * 2);
-    $hash = substr(hash('sha256', $text), 0, $this->getSize() * 2);
     return $hash;
   }
 
-  public function xorKeys($key1, $key2)
+  public function xor($key1, $key2)
   {
     $hex = gmp_strval(gmp_xor(gmp_init('0x' . $key1), gmp_init('0x' . $key2)), 16);
-    $hex = str_pad($hex, $this->getSize() * 2, '0', STR_PAD_LEFT);
+    $hex = str_pad($hex, $this->size() * 2, '0', STR_PAD_LEFT);
     return $hex;
   }
 
-  public function obscureKeys($key1, $key2 = '', $split = 1)
+  public function obscure($entropy1, $entropy2 = '', $split = 1)
   {
     $output = [];
-    if (!empty($key2)) {
-      $current_xored = $this->xorKeys($key1, $key2);
+    if (!empty($entropy2)) {
+      $entropy_xored = $this->xor($entropy1, $entropy2);
     } else {
-      $current_xored = $key1;
+      $entropy_xored = $entropy1;
     }
-    $output[] = $current_xored;
+    $output[] = $entropy_xored;
     for ($i = 1; $i < $split; $i++) {
-      $current_seed = $this->getRandomKey();
-      $output[$i - 1] = $current_seed;
-      $current_xored = $this->xorKeys($current_xored, $current_seed);
-      $output[$i] = $current_xored;
+      $entropy_random = $this->entropy();
+      $output[$i - 1] = $entropy_random;
+      $entropy_xored = $this->xor($entropy_xored, $entropy_random);
+      $output[$i] = $entropy_xored;
     }
     return $output;
   }
 
-  protected function getWordlists($path)
+  protected function wordlists($path)
   {
-    $languages = $this->getConfig('languages');
-    $default_language = $this->getConfig('default_language');
+    $languages = $this->config('languages');
+    $default_language = $this->config('default_language');
     $wordlists = [];
     $wordlist_default = explode(PHP_EOL, file_get_contents($path . $default_language . '.txt'));
     $wordlist_default = array_filter($wordlist_default);
@@ -234,37 +206,48 @@ class SeedConceal
 
 class SeedConcealCli extends SeedConceal
 {
-  const CONSOLE_BOLD = "\033[1m";
-  const CONSOLE_NORMAL = "\033[0m";
+  const CLI_BOLD = "\033[1m";
+  const CLI_NORMAL = "\033[0m";
 
-  public function print($label, $value)
+  public function __construct()
   {
-    echo $label . ': ';
-    echo self::CONSOLE_BOLD . $value . self::CONSOLE_NORMAL . PHP_EOL;
+    parent::__construct();
+    echo PHP_EOL;
+    register_shutdown_function(function () {
+      echo PHP_EOL;
+    });
   }
 
-  public function printHeading($title)
+  public function print($data = [], $heading = '')
   {
-    echo PHP_EOL;
-    $this->print('::', $title);
-    echo PHP_EOL;
-  }
-
-  public function printDetails($info)
-  {
-    foreach ($info as $index => $value) {
-      if ($index === 'Legacy Address' || $index === 'Bech32 Address') {
-        $value = sprintf($this->getConfig('explorer'), $value);
-      }
-      $this->print($index, $value);
+    if (!empty($heading)) {
+      echo PHP_EOL . self::CLI_BOLD . $heading . self::CLI_NORMAL . PHP_EOL;
     }
-    echo PHP_EOL;
+    if (!empty($data)) {
+      if (!empty($heading)) {
+        echo PHP_EOL;
+      }
+      foreach ($data as $label => $value) {
+        if (is_array($value)) {
+          $this->print($value);
+        } else {
+          if (!is_numeric($label)) {
+            echo $label . ': ';
+          }
+          echo self::CLI_BOLD . $value . self::CLI_NORMAL . PHP_EOL;
+          if (!is_numeric($label) && strpos($label, 'Address') !== false) {
+            echo str_replace('Address', 'Explorer', $label) . ': ';
+            echo self::CLI_BOLD . sprintf($this->config('explorer'), $value) . self::CLI_NORMAL . PHP_EOL;
+          }
+        }
+      }
+    }
   }
 }
 
 class SeedConcealWeb extends SeedConceal
 {
-  public function getQrcode($mnemonic)
+  public function qrcode($mnemonic)
   {
     $qrcode = new DNS2D();
     $qrcode->setStorPath(__DIR__ . '/cache/');
@@ -272,16 +255,29 @@ class SeedConcealWeb extends SeedConceal
     return $image;
   }
 
-  public function printDetails($info)
+  public function print($data = [], $heading = '')
   {
-    echo '<dl>';
-    foreach ($info as $index => $value) {
-      if ($index === 'Legacy Address' || $index === 'Bech32 Address') {
-        $value = '<a href="' . sprintf($this->getConfig('explorer'), $value) .  '" target="_blank">' . $value . '</a>';
-      }
-      echo '<dt><strong>' . $index . '</strong></dt>';
-      echo '<dd>' . $value . '</dd>';
+    if (!empty($heading)) {
+      echo '<div class="sc-heading">' . htmlspecialchars($heading) . '</div>';
     }
-    echo '</dl>';
+    if (!empty($data)) {
+      if (!empty($heading)) {
+        echo '<dl class="sc-datalist">';
+      }
+      foreach ($data as $label => $value) {
+        if (is_array($value)) {
+          $this->print($value);
+        } else {
+          if (!is_numeric($label) && strpos($label, 'Address') !== false) {
+            $value = '<a href="' . sprintf($this->config('explorer'), $value) .  '" target="_blank">' . $value . '</a>';
+          }
+          echo '<dt><strong>' . $label . '</strong></dt>';
+          echo '<dd>' . $value . '</dd>';
+        }
+      }
+      if (!empty($heading)) {
+        echo '</dl>';
+      }
+    }
   }
 }

@@ -41,9 +41,9 @@ return [
   'explorer' => 'https://www.blockchain.com/btc/address/%s',
 
   // Default salt for hashing.
-  'default_hash_salt' => 'SeedConceal',
+  'default_hash_salt' => '',
 
   // Default hashing iteration count.
-  'default_hash_iteration' => 1024,
+  'default_hash_iteration' => 2048,
 
 ];

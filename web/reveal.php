@@ -8,8 +8,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../app/SeedConceal.php';
 
 $sc = new SeedConcealWeb();
-$default_hash_salt = $sc->getConfig('default_hash_salt');
-$default_hash_iteration = $sc->getConfig('default_hash_iteration');
+$default_hash_salt = $sc->config('default_hash_salt');
+$default_hash_iteration = $sc->config('default_hash_iteration');
 
 $input_label = filter_input(INPUT_POST, 'label', FILTER_DEFAULT);
 $input_mnemonic = filter_input(INPUT_POST, 'mnemonic', FILTER_DEFAULT);
@@ -21,33 +21,33 @@ if (empty($input_mnemonic)) {
   die('[E] A seed phrase is required.');
 }
 
-$input_translated_all = $sc->parseMnemonicInput(explode(PHP_EOL, $input_mnemonic));
+$input_translated_all = $sc->parse(explode(PHP_EOL, $input_mnemonic));
 $output_key = '';
 foreach ($input_translated_all as $index => $input_translated) {
   if (empty($input_translated['lang_id'])) {
     die('[E] Unable to determine the seed phrase language.');
     exit;
   }
-  if (empty($input_translated['private_key'])) {
+  if (empty($input_translated['entropy'])) {
     die('[E] The input seed phrase is not valid.');
     exit;
   }
-  $sc->setSize($input_translated['byte_size']);
+  $sc->size($input_translated['byte_size']);
   if (empty($output_key)) {
-    $output_key = $input_translated['private_key'];
+    $output_key = $input_translated['entropy'];
   } else {
-    $output_key = $sc->xorKeys($output_key, $input_translated['private_key']);
+    $output_key = $sc->xor($output_key, $input_translated['entropy']);
   }
 }
 
 if (!empty($input_password)) {
-  $input_password = $sc->hashText($input_password, $input_salt, $input_iteration);
-  $private_key = $sc->xorKeys($output_key, $input_password);
+  $input_password = $sc->hash($input_password, $input_salt, $input_iteration);
+  $entropy = $sc->xor($output_key, $input_password);
 } else {
-  $private_key = $output_key;
+  $entropy = $output_key;
 }
 
-$detail = $sc->getKeyDetails($private_key);
+$details = $sc->details($entropy);
 
 ?>
 <!doctype html>
@@ -62,8 +62,7 @@ $detail = $sc->getKeyDetails($private_key);
 <body>
   <div class="sc-container sc-first">
     <div class="sc-inner">
-      <div class="sc-heading">Details</div>
-      <?php $sc->printDetails($detail); ?>
+      <?php $sc->print($details, 'Details'); ?>
     </div>
   </div>
   <div id="capture1" class="sc-container">
@@ -71,9 +70,9 @@ $detail = $sc->getKeyDetails($private_key);
       <?php if (!empty($input_label)) { ?>
         <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?></div>
       <?php } ?>
-      <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $detail['Seed Phrase']; ?></p>
+      <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $details['Seed Phrase']; ?></p>
     </div>
-    <img src="data:image/png;base64,<?php echo $sc->getQrcode($detail['Seed Phrase']); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
+    <img src="data:image/png;base64,<?php echo $sc->qrcode($details['Seed Phrase']); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
   </div>
   <div class="sc-canvas">
     <canvas></canvas>

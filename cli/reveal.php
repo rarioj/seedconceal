@@ -8,10 +8,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../app/SeedConceal.php';
 
 $sc = new SeedConcealCli();
-$default_hash_salt = $sc->getConfig('default_hash_salt');
-$default_hash_iteration = $sc->getConfig('default_hash_iteration');
-
-$sc->printHeading('INPUT');
+$default_hash_salt = $sc->config('default_hash_salt');
+$default_hash_iteration = $sc->config('default_hash_iteration');
 
 $input_mnemonic_all = [];
 echo '[?] Enter the seed phrase.' . PHP_EOL;
@@ -29,22 +27,22 @@ do {
   $input_mnemonic_all[] = $input_mnemonic;
 } while (!empty($input_mnemonic));
 
-$input_translated_all = $sc->parseMnemonicInput($input_mnemonic_all);
+$input_translated_all = $sc->parse($input_mnemonic_all);
 $output_key = '';
 foreach ($input_translated_all as $index => $input_translated) {
   if (empty($input_translated['lang_id'])) {
     echo '[E] Unable to determine the seed phrase language.' . PHP_EOL;
     exit;
   }
-  if (empty($input_translated['private_key'])) {
+  if (empty($input_translated['entropy'])) {
     echo '[E] The input seed phrase is not valid.' . PHP_EOL;
     exit;
   }
-  $sc->setSize($input_translated['byte_size']);
+  $sc->size($input_translated['byte_size']);
   if (empty($output_key)) {
-    $output_key = $input_translated['private_key'];
+    $output_key = $input_translated['entropy'];
   } else {
-    $output_key = $sc->xorKeys($output_key, $input_translated['private_key']);
+    $output_key = $sc->xor($output_key, $input_translated['entropy']);
   }
 }
 
@@ -53,27 +51,26 @@ $input_password = readline('[>] ');
 $input_salt = '';
 $input_iteration = 0;
 if (!empty($input_password)) {
-  echo '[?] Enter a salt (default ' . $default_hash_salt . ').' . PHP_EOL;
+  echo '[?] Enter the salt (if any).' . PHP_EOL;
   $input_salt = readline('[>] ');
-  if (empty($input_salt)) {
-    echo '[I] Using default salt: ' . $default_hash_salt . PHP_EOL;
-    $input_salt = $default_hash_salt;
-  }
-  echo '[?] Enter the number of hashing iteration (default ' . $default_hash_iteration . ').' . PHP_EOL;
-  $input_iteration = (int) readline('[>] ');
-  if (empty($input_iteration) || $input_iteration < 0) {
-    echo '[I] Using default iteration: ' . $default_hash_iteration . PHP_EOL;
-    $input_iteration = $default_hash_iteration;
+  if (!empty($input_salt)) {
+    echo '[?] Enter the number of hashing iteration (default ' . $default_hash_iteration . ').' . PHP_EOL;
+    $input_iteration = (int) readline('[>] ');
+    if (empty($input_iteration) || $input_iteration <= 0) {
+      echo '[I] Using default iteration: ' . $default_hash_iteration . PHP_EOL;
+      $input_iteration = $default_hash_iteration;
+    }
   }
 }
-
-$sc->printHeading('OUTPUT');
 
 if (!empty($input_password)) {
-  $input_password = $sc->hashText($input_password, $input_salt, $input_iteration);
-  $private_key = $sc->xorKeys($output_key, $input_password);
+  $input_password = $sc->hash($input_password, $input_salt, $input_iteration);
+  $entropy = $sc->xor($output_key, $input_password);
 } else {
-  $private_key = $output_key;
+  $entropy = $output_key;
 }
 
-$sc->printDetails($sc->getKeyDetails($private_key));
+$details = $sc->details($entropy);
+$sc->print($details, 'D E T A I L S');
+
+$sc->print([$details['Seed Phrase']], 'O U T P U T');

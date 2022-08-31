@@ -8,12 +8,10 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../app/SeedConceal.php';
 
 $sc = new SeedConcealCli();
-$sizes = $sc->getConfig('sizes');
-$default_size = $sc->getConfig('default_size');
-$default_hash_salt = $sc->getConfig('default_hash_salt');
-$default_hash_iteration = $sc->getConfig('default_hash_iteration');
-
-$sc->printHeading('INPUT');
+$sizes = $sc->config('sizes');
+$default_size = $sc->config('default_size');
+$default_hash_salt = $sc->config('default_hash_salt');
+$default_hash_iteration = $sc->config('default_hash_iteration');
 
 echo '[?] Enter a passphrase to generate a deterministic wallet.' . PHP_EOL;
 echo '    Leave blank to generate a random wallet.' . PHP_EOL;
@@ -21,17 +19,15 @@ $input_passphrase = readline('[>] ');
 $input_salt = $input_password = '';
 $input_iteration = 0;
 if (!empty($input_passphrase)) {
-  echo '[?] Enter a salt (default ' . $default_hash_salt . ').' . PHP_EOL;
+  echo '[?] Enter a salt (optional but strongly recommended).' . PHP_EOL;
   $input_salt = readline('[>] ');
-  if (empty($input_salt)) {
-    echo '[I] Using default salt: ' . $default_hash_salt . PHP_EOL;
-    $input_salt = $default_hash_salt;
-  }
-  echo '[?] Enter the number of hashing iteration (default ' . $default_hash_iteration . ').' . PHP_EOL;
-  $input_iteration = (int) readline('[>] ');
-  if (empty($input_iteration) || $input_iteration <= 0) {
-    echo '[I] Using default iteration: ' . $default_hash_iteration . PHP_EOL;
-    $input_iteration = $default_hash_iteration;
+  if (!empty($input_salt)) {
+    echo '[?] Enter the number of hashing iteration (default ' . $default_hash_iteration . ').' . PHP_EOL;
+    $input_iteration = (int) readline('[>] ');
+    if (empty($input_iteration) || $input_iteration <= 0) {
+      echo '[I] Using default iteration: ' . $default_hash_iteration . PHP_EOL;
+      $input_iteration = $default_hash_iteration;
+    }
   }
   echo '[?] Enter a password (optional but strongly recommended).' . PHP_EOL;
   $input_password = readline('[>] ');
@@ -44,18 +40,18 @@ if (empty($input_size) || empty($sizes[$input_size])) {
   $input_size = $default_size;
 }
 
-$sc->printHeading('OUTPUT');
-
-$sc->setSize($input_size);
-$private_key = $sc->getRandomKey();
+$sc->size($input_size);
+$entropy = $sc->entropy();
 if (!empty($input_passphrase)) {
-  $input_passphrase = $sc->hashText($input_passphrase, $input_salt, $input_iteration);
+  $input_passphrase = $sc->hash($input_passphrase, $input_salt, $input_iteration);
   if (!empty($input_password)) {
-    $input_password = $sc->hashText($input_password, $input_salt, $input_iteration);
-    $private_key = $sc->xorKeys($input_passphrase, $input_password);
+    $input_password = $sc->hash($input_password, $input_salt, $input_iteration);
+    $entropy = $sc->xor($input_passphrase, $input_password);
   } else {
-    $private_key = $input_passphrase;
+    $entropy = $input_passphrase;
   }
 }
+$details = $sc->details($entropy);
+$sc->print($details, 'D E T A I L S');
 
-$sc->printDetails($sc->getKeyDetails($private_key));
+$sc->print([$details['Seed Phrase']], 'O U T P U T');

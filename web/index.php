@@ -8,14 +8,14 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../app/SeedConceal.php';
 
 $sc = new SeedConcealWeb();
-$sizes = $sc->getConfig('sizes');
-$default_size = $sc->getConfig('default_size');
-$default_hash_salt = $sc->getConfig('default_hash_salt');
-$default_hash_iteration = $sc->getConfig('default_hash_iteration');
-$default_split = $sc->getConfig('default_split');
-$languages = $sc->getConfig('languages');
-$random_language = $sc->getConfig('random_language');
-$default_language = $sc->getConfig('default_language');
+$sizes = $sc->config('sizes');
+$default_size = $sc->config('default_size');
+$default_hash_salt = $sc->config('default_hash_salt');
+$default_hash_iteration = $sc->config('default_hash_iteration');
+$default_split = $sc->config('default_split');
+$languages = $sc->config('languages');
+$random_language = $sc->config('random_language');
+$default_language = $sc->config('default_language');
 
 ?>
 <!doctype html>
@@ -44,10 +44,11 @@ $default_language = $sc->getConfig('default_language');
         <label for="generate-salt" id="label-generate-salt" style="display: none;">
           <strong>Salt</strong>
           <input type="text" id="generate-salt" name="salt" value="<?php echo $default_hash_salt; ?>">
+          <small>&bull; Optional but strongly recommended</small>
         </label>
         <label for="generate-iteration" id="label-generate-iteration" style="display: none;">
           <strong>Iteration</strong>
-          <input type="number" id="generate-iteration" name="iteration" value="<?php echo $default_hash_iteration; ?>">
+          <input type="number" id="generate-iteration" name="iteration" value="<?php echo $default_hash_iteration; ?>" min="1">
         </label>
         <label for="generate-password" id="label-generate-password" style="display: none;">
           <strong>Password</strong>
@@ -86,14 +87,15 @@ $default_language = $sc->getConfig('default_language');
         <label for="obscure-salt" id="label-obscure-salt" style="display: none;">
           <strong>Salt</strong>
           <input type="text" id="obscure-salt" name="salt" value="<?php echo $default_hash_salt; ?>">
+          <small>&bull; Optional but strongly recommended</small>
         </label>
         <label for="obscure-iteration" id="label-obscure-iteration" style="display: none;">
           <strong>Iteration</strong>
-          <input type="number" id="obscure-iteration" name="iteration" value="<?php echo $default_hash_iteration; ?>">
+          <input type="number" id="obscure-iteration" name="iteration" value="<?php echo $default_hash_iteration; ?>" min="1">
         </label>
         <label for="obscure-split">
           <strong>Split into</strong>
-          <input type="number" id="obscure-split" name="split" value="<?php echo $default_split; ?>">
+          <input type="number" id="obscure-split" name="split" value="<?php echo $default_split; ?>" min="1">
         </label>
         <label for="obscure-lang">
           <strong>Language output</strong>
@@ -131,7 +133,7 @@ $default_language = $sc->getConfig('default_language');
         </label>
         <label for="reveal-iteration" id="label-reveal-iteration" style="display: none;">
           <strong>Iteration</strong>
-          <input type="number" id="reveal-iteration" name="iteration" value="<?php echo $default_hash_iteration; ?>">
+          <input type="number" id="reveal-iteration" name="iteration" value="<?php echo $default_hash_iteration; ?>" min="1">
         </label>
         <p><button type="submit">Submit</button></p>
       </form>

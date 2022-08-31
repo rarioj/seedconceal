@@ -52,7 +52,9 @@ This tool generates a valid seed phrase for a wallet using a deterministic or ra
 
 When generating a new wallet, leaving the passphrase field blank will let you use PHP's secure [random_bytes()](https://www.php.net/manual/en/function.random-bytes.php) function.
 
-For a deterministic approach, first, understand the risk of generating this type of wallet. See the [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf) paper. Ensure the passphrase used is unique, private, and never exposed on the internet. Using a password will reduce the attack vector by [XOR-ing](https://www.php.net/manual/en/function.gmp-xor.php) hashed passphrase and password. The [hash salt and the number of iterations](https://www.php.net/manual/en/function.hash-pbkdf2.php) are essential when revealing the original mnemonic.
+With a deterministic approach, please understand the risk of generating this type of wallet. See the [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf) paper. Unlike traditional Brain wallet which hashes a passphrase to generate a **private key**, SeedConceal will hash, XOR, salt, and iterate passphrase to generate **entropy**. Hence, this deterministic wallet generation will produce a seed phrase as well. The intent is to conceal your seed phrase by not remembering 12 or 24 words mnemonic, but by remembering your private passphrase, password, and salt.
+
+Ensure the passphrase used is unique, private, and never exposed on the internet. Using a password will reduce the attack vector by [XOR-ing](https://www.php.net/manual/en/function.gmp-xor.php) it with a hashed passphrase. The [hash salt and the number of iterations](https://www.php.net/manual/en/function.hash-pbkdf2.php) are essential when revealing the original mnemonic.
 
 ### Obscure
 
@@ -83,14 +85,14 @@ Parameters:
 Generated seed phrase:
 
 ```
-sword oak page attack venture mountain ramp treat heavy level obscure resemble surround coach leaf comfort boat nuclear bunker minor picnic exhaust embark roof
+garden arrest fossil illness bunker foot olive tray grunt cushion original replace general spy happy render scene easy field oven tonight poverty divide economy
 ```
 
 ### Example 2: Obscuring an existing seed phrase
 
 Parameters:
 
-- Seed phrase: `sword oak page attack venture mountain ramp treat heavy level obscure resemble surround coach leaf comfort boat nuclear bunker minor picnic exhaust embark roof`
+- Seed phrase: `garden arrest fossil illness bunker foot olive tray grunt cushion original replace general spy happy render scene easy field oven tonight poverty divide economy`
 - Password: `ObscureMe!`
 - Salt: `genesis block`
 - Iteration: `25000`
@@ -100,32 +102,13 @@ Parameters:
 Generated seed phrases:
 
 ```
-熊 鬼 都 賣 遍 冶 往 必 弄 點 審 號 錠 君 偶 溪 行 魯 篇 式 溝 嘆 功 子
-zamotat anketa masopust povstat pikle rachot matrika montovat dnes nadobro kapalina okrasa emise svatba klec pianista nejprve sobota mazanec zdivo ofina nominace otrhat lepenka
-ながい みりょく おどり べんごし ぬめり ていさつ おかわり おくじょう りきせつ すあな へいてん うなる そせい すいようび ひんしゅ みのう すらすら こすう さみしい うれしい かなざわし ねむい あずかる てつづき
-climat blanchir nation exaucer glorieux coffre dossier sevrage éclore peigne fureur bronzer rivière taureau voguer trahir aisance muter sonde géomètre femme annuel biopsie fragile
-```
+mueble línea huerta parar tenso picar ciprés centro uno babor casco imitar posible anemia hueso paquete brillo tijera sartén pelar farol vehículo alga funda
 
-### Example 3: Revealing obscured seed phrases
+phone country grant cute fine once neither plunge subway envelope firm electric refuse satoshi armor virtual enable absent rookie fun practice name eyebrow between
 
-Parameters:
+こふん せつりつ ねんかん はんしゃ ざつおん はいけん ほこる おうべい にっき ぴったり じどう しみん はんぼうき しゃれい せんとう やめる えがく うやまう すわる ごがつ うなぎ ねむい たぶん くいず
 
-- Seed phrase(s):
-
-```
-ながい みりょく おどり べんごし ぬめり ていさつ おかわり おくじょう りきせつ すあな へいてん うなる そせい すいようび ひんしゅ みのう すらすら こすう さみしい うれしい かなざわし ねむい あずかる てつづき
-熊 鬼 都 賣 遍 冶 往 必 弄 點 審 號 錠 君 偶 溪 行 魯 篇 式 溝 嘆 功 子
-climat blanchir nation exaucer glorieux coffre dossier sevrage éclore peigne fureur bronzer rivière taureau voguer trahir aisance muter sonde géomètre femme annuel biopsie fragile
-zamotat anketa masopust povstat pikle rachot matrika montovat dnes nadobro kapalina okrasa emise svatba klec pianista nejprve sobota mazanec zdivo ofina nominace otrhat lepenka
-```
-- Password: `ObscureMe!`
-- Salt: `genesis block`
-- Iteration: `25000`
-
-Revealed seed phrase (same mnemonic as Example 2):
-
-```
-sword oak page attack venture mountain ramp treat heavy level obscure resemble surround coach leaf comfort boat nuclear bunker minor picnic exhaust embark roof
+眉 屋 仗 凱 冊 它 妹 番 闢 預 讀 針 況 泛 和 告 剝 取 三 選 障 口 趨 恢
 ```
 
 ## BIP39

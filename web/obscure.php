@@ -8,12 +8,12 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../app/SeedConceal.php';
 
 $sc = new SeedConcealWeb();
-$default_hash_salt = $sc->getConfig('default_hash_salt');
-$default_hash_iteration = $sc->getConfig('default_hash_iteration');
-$default_split = $sc->getConfig('default_split');
-$languages = $sc->getConfig('languages');
-$random_language = $sc->getConfig('random_language');
-$default_language = $sc->getConfig('default_language');
+$default_hash_salt = $sc->config('default_hash_salt');
+$default_hash_iteration = $sc->config('default_hash_iteration');
+$default_split = $sc->config('default_split');
+$languages = $sc->config('languages');
+$random_language = $sc->config('random_language');
+$default_language = $sc->config('default_language');
 
 $input_label = filter_input(INPUT_POST, 'label', FILTER_DEFAULT);
 $input_mnemonic = filter_input(INPUT_POST, 'mnemonic', FILTER_DEFAULT);
@@ -27,23 +27,25 @@ if (empty($input_mnemonic)) {
   die('[E] A seed phrase is required.');
 }
 
-$input_translated = $sc->parseMnemonicInput([$input_mnemonic]);
+$input_translated = $sc->parse([$input_mnemonic]);
 if (empty($input_translated[0]['lang_id'])) {
   die('[E] Unable to determine the seed phrase language.');
 }
-if (empty($input_translated[0]['private_key'])) {
+if (empty($input_translated[0]['entropy'])) {
   die('[E] The input seed phrase is not valid.');
 }
 
 $translated = $input_translated[0];
-$sc->setSize($translated['byte_size']);
+$sc->size($translated['byte_size']);
 if (!empty($input_password)) {
-  $input_password = $sc->hashText($input_password, $input_salt, $input_iteration);
+  $input_password = $sc->hash($input_password, $input_salt, $input_iteration);
 }
-$output_keys = $sc->obscureKeys($translated['private_key'], $input_password, $input_split);
-$details = [];
-foreach ($output_keys as $private_key) {
-  $details[] = $sc->getKeyDetails($private_key, $input_language);
+$entropies = $sc->obscure($translated['entropy'], $input_password, $input_split);
+$mnemonics = $details = [];
+foreach ($entropies as $entropy) {
+  $detail = $sc->details($entropy);
+  $mnemonics[] = $sc->translate($detail['Seed Phrase'], $input_language);
+  $details[] = $detail;
 }
 
 ?>
@@ -59,13 +61,9 @@ foreach ($output_keys as $private_key) {
 <body>
   <div class="sc-container sc-first">
     <div class="sc-inner">
-      <div class="sc-heading">Details</div>
       <?php
-      $mnemonic_all = [];
       foreach ($details as $index => $detail) {
-        echo '<strong>Sequence #' . ($index + 1) . '</strong><br />';
-        $mnemonic_all[] = $detail['Seed Phrase'];
-        $sc->printDetails($detail);
+        $sc->print($detail, 'Details  #' . ($index + 1));
       }
       ?>
     </div>
@@ -76,10 +74,10 @@ foreach ($output_keys as $private_key) {
         <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?></div>
       <?php } ?>
       <?php foreach ($details as $index => $detail) { ?>
-        <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1_<?php echo $index; ?>'), { onclone: function(cloned) { cloned.getElementById('capture1_<?php echo $index; ?>').style.display = 'block'; }}).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $detail['Seed Phrase']; ?></p>
+        <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1_<?php echo $index; ?>'), { onclone: function(cloned) { cloned.getElementById('capture1_<?php echo $index; ?>').style.display = 'block'; }}).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $mnemonics[$index]; ?></p>
       <?php } ?>
     </div>
-    <img src="data:image/png;base64,<?php echo $sc->getQrcode(implode(PHP_EOL, $mnemonic_all)); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
+    <img src="data:image/png;base64,<?php echo $sc->qrcode(implode(PHP_EOL, $mnemonics)); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
   </div>
   <?php foreach ($details as $index => $detail) { ?>
     <div id="capture1_<?php echo $index; ?>" class="sc-container sc-hidden">
@@ -87,9 +85,9 @@ foreach ($output_keys as $private_key) {
         <?php if (!empty($input_label)) { ?>
           <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?> &bull; <?php echo ($index + 1) . "/" . count($details); ?></div>
         <?php } ?>
-        <p><?php echo $detail['Seed Phrase']; ?></p>
+        <p><?php echo $mnemonics[$index]; ?></p>
       </div>
-      <img src="data:image/png;base64,<?php echo $sc->getQrcode($detail['Seed Phrase']); ?>" class="sc-qrcode" />
+      <img src="data:image/png;base64,<?php echo $sc->qrcode($mnemonics[$index]); ?>" class="sc-qrcode" />
     </div>
   <?php } ?>
   <div class="sc-canvas">
