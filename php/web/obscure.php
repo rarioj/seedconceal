@@ -4,8 +4,8 @@ declare(strict_types=1);
 error_reporting(E_ALL ^ E_DEPRECATED);
 set_time_limit(0);
 
-require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../app/SeedConceal.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../SeedConceal.php';
 
 $sc = new SeedConcealWeb();
 $default_hash_salt = $sc->config('default_hash_salt');

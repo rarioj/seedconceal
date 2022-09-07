@@ -12,17 +12,15 @@ use Milon\Barcode\DNS2D;
 
 class SeedConceal
 {
-  protected $_address;
   protected $_config;
   protected $_size;
   protected $_wordlists;
 
   public function __construct()
   {
-    $this->_address = require_once __DIR__ . '/address.php';
     $this->_config = require_once __DIR__ . '/config.php';
-    $this->_wordlists = $this->wordlists(__DIR__ . '/bip39/');
-    $this->size($this->config('default_size'));
+    $this->_size = $this->config('default_size');
+    $this->_wordlists = $this->wordlists();
   }
 
   public function config($name = '')
@@ -59,6 +57,7 @@ class SeedConceal
   public function details($entropy)
   {
     $details = [];
+    $addresses = $this->config('addresses');
     $buffer = Buffer::hex($entropy, $this->size());
     $mnemonic = MnemonicFactory::bip39()->entropyToMnemonic($buffer);
     $seed = (new Bip39SeedGenerator())->getSeed($mnemonic);
@@ -72,7 +71,7 @@ class SeedConceal
     $details['Root Private'] = $root->getPrivateKey()->getHex();
     $details['Root Public'] = $root->getPublicKey()->getHex();
     $details['Root WIF'] = $root->getPrivateKey()->toWif();
-    foreach ($this->_address as $label => $derivation) {
+    foreach ($addresses as $label => $derivation) {
       $derived = HierarchicalKeyFactory::fromExtended($xpriv)->derivePath($derivation['path']);
       $hash = $derived->getPublicKey()->getPubKeyHash();
       $format = $derivation['format'];
@@ -181,26 +180,27 @@ class SeedConceal
     return $output;
   }
 
-  protected function wordlists($path)
+  protected function wordlists()
   {
     $languages = $this->config('languages');
     $default_language = $this->config('default_language');
-    $wordlists = [];
-    $wordlist_default = explode(PHP_EOL, file_get_contents($path . $default_language . '.txt'));
+    $wordlists = $this->config('wordlists');
+    $wordlists_compiled = [];
+    $wordlist_default = $wordlists[$default_language];
     $wordlist_default = array_filter($wordlist_default);
     $wordlist_default = array_map('trim', $wordlist_default);
-    $wordlists[$default_language] = $wordlist_default;
+    $wordlists_compiled[$default_language] = $wordlist_default;
     foreach ($languages as $lang_id => $lang_label) {
       if ($lang_id === $default_language) {
         continue;
       }
-      $dictionaries = explode(PHP_EOL, file_get_contents($path . $lang_id . '.txt'));
+      $dictionaries = $wordlists[$lang_id];
       $dictionaries = array_filter($dictionaries);
       $dictionaries = array_map('trim', $dictionaries);
-      $wordlists[$lang_id] = array_combine($dictionaries, $wordlists[$default_language]);
+      $wordlists_compiled[$lang_id] = array_combine($dictionaries, $wordlists_compiled[$default_language]);
     }
-    $wordlists[$default_language] = array_combine($wordlists[$default_language], $wordlists[$default_language]);
-    return $wordlists;
+    $wordlists_compiled[$default_language] = array_combine($wordlists_compiled[$default_language], $wordlists_compiled[$default_language]);
+    return $wordlists_compiled;
   }
 }
 
@@ -250,7 +250,7 @@ class SeedConcealWeb extends SeedConceal
   public function qrcode($mnemonic)
   {
     $qrcode = new DNS2D();
-    $qrcode->setStorPath(__DIR__ . '/cache/');
+    $qrcode->setStorPath(__DIR__ . '/../cache/');
     $image = $qrcode->getBarcodePNG($mnemonic, 'QRCODE');
     return $image;
   }

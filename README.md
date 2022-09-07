@@ -21,10 +21,10 @@ By creating an air-gapped system, you can guarantee that your operating system w
 
 #### Web Mode
 
-![SeedConceal Web Mode](app/images/seedconceal-web.png)
+![SeedConceal Web Mode](screenshot-php-web.png)
 
 ```
-cd web
+cd php/web
 php -S localhost:9000
 ```
 
@@ -34,12 +34,12 @@ On the web version, clicking on the generated seed phrases or the QR codes will 
 
 #### CLI Mode
 
-![SeedConceal CLI Mode](app/images/seedconceal-cli.png)
+![SeedConceal CLI Mode](screenshot-php-cli.png)
 
 ```
-php cli/generate.php
-php cli/obscure.php
-php cli/reveal.php
+php php/cli/generate.php
+php php/cli/obscure.php
+php php/cli/reveal.php
 ```
 
 Follow the interactive prompt for each tool.
@@ -115,7 +115,7 @@ phone country grant cute fine once neither plunge subway envelope firm electric 
 
 [BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) describes the implementation of a mnemonic code or mnemonic sentence, a group of easy-to-remember words, for the generation of deterministic wallets.
 
-You can add custom wordlists as a plain text file in the `app/bip39` directory and then register as a new language in the `app/config.php` file. Please ensure to **back up your custom wordlists file** if you do so. Custom wordlists must follow the rules and recommendations described [on this page](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki).
+You can add custom wordlists and then register it as a new language in the `php/config.php` file. Please ensure to **back up your custom configuration file** if you do so. Custom wordlists must follow the rules and recommendations described [on this page](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki).
 
 [Wordlists files](https://github.com/bitcoin/bips/blob/master/bip-0039/bip-0039-wordlists.md) available:
 
