@@ -74,8 +74,8 @@ $entropies = $sc->obscure($translated['entropy'], $input_password, $input_split)
 $mnemonics = [];
 foreach ($entropies as $index => $entropy) {
   $details = $sc->details($entropy);
-  $mnemonics[] = $sc->translate($details['Seed Phrase'], $input_language);
-  $sc->print($details, 'D E T A I L S  # ' . ($index + 1));
+  $mnemonics[] = $sc->translate($details[0], $input_language);
+  $sc->print($details, 'Output  #' . ($index + 1));
 }
 
-$sc->print($mnemonics, 'O U T P U T');
+$sc->print($mnemonics, 'Mnemonics');

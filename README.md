@@ -52,7 +52,7 @@ This tool generates a valid seed phrase for a wallet using a deterministic or ra
 
 When generating a new wallet, leaving the passphrase field blank will let you use PHP's secure [random_bytes()](https://www.php.net/manual/en/function.random-bytes.php) function.
 
-With a deterministic approach, please understand the risk of generating this type of wallet. See the [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf) paper. Unlike traditional Brain wallet which hashes a passphrase to generate a **private key**, SeedConceal will hash, XOR, salt, and iterate passphrase to generate **entropy**. Hence, this deterministic wallet generation will produce a seed phrase as well. The intent is to conceal your seed phrase by not remembering 12 or 24 words mnemonic, but by remembering your private passphrase, password, and salt.
+With a deterministic approach, please understand the risk of generating this type of wallet. See the [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf) paper. Unlike traditional Brain wallet which hashes a passphrase to generate a **private key**, SeedConceal will hash, XOR, salt, and iterate passphrase to generate **entropy**. Hence, this deterministic wallet generation will produce a seed phrase as well. The intent is to conceal your seed phrase by not remembering the mnemonic, but by remembering your private passphrase, password, and salt.
 
 Ensure the passphrase used is unique, private, and never exposed on the internet. Using a password will reduce the attack vector by [XOR-ing](https://www.php.net/manual/en/function.gmp-xor.php) it with a hashed passphrase. The [hash salt and the number of iterations](https://www.php.net/manual/en/function.hash-pbkdf2.php) are essential when revealing the original mnemonic.
 
@@ -80,7 +80,6 @@ Parameters:
 - Salt: `satoshi nakamoto`
 - Iteration: `10000`
 - Password: `ObscureMe!`
-- Byte size: `32` (24 words mnemonic)
 
 Generated seed phrase:
 

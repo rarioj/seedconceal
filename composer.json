@@ -1,6 +1,6 @@
 {
     "require": {
-        "bitwasp/bitcoin": "*",
+        "protonlabs/bitcoin": "^1.0",
         "milon/barcode": "^9.0"
     }
 }

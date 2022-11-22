@@ -71,6 +71,4 @@ if (!empty($input_password)) {
 }
 
 $details = $sc->details($entropy);
-$sc->print($details, 'D E T A I L S');
-
-$sc->print([$details['Seed Phrase']], 'O U T P U T');
+$sc->print($details);

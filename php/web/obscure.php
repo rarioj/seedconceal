@@ -44,7 +44,7 @@ $entropies = $sc->obscure($translated['entropy'], $input_password, $input_split)
 $mnemonics = $details = [];
 foreach ($entropies as $entropy) {
   $detail = $sc->details($entropy);
-  $mnemonics[] = $sc->translate($detail['Seed Phrase'], $input_language);
+  $mnemonics[] = $sc->translate($detail[0], $input_language);
   $details[] = $detail;
 }
 
@@ -53,48 +53,60 @@ foreach ($entropies as $entropy) {
 <html>
 
 <head>
-  <meta charset="utf-8">
   <title>Seed Conceal - Obscure</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/mini.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
 </head>
 
 <body>
-  <div class="sc-container sc-first">
-    <div class="sc-inner">
-      <?php
-      foreach ($details as $index => $detail) {
-        $sc->print($detail, 'Details  #' . ($index + 1));
-      }
-      ?>
+  <header class="sticky" style="height: auto;">
+    <h1><span class="icon-home"></span> <a href="/">Seed Conceal</a> &bull; Obscure</h1>
+  </header>
+  <input type="checkbox" id="modal-control" class="modal">
+  <div>
+    <div class="card" style="max-height: none; width: fit-content;">
+      <label for="modal-control" class="modal-close"></label>
+      <canvas></canvas>
     </div>
   </div>
-  <div id="capture1" class="sc-container">
-    <div class="sc-inner">
-      <?php if (!empty($input_label)) { ?>
-        <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?></div>
-      <?php } ?>
-      <?php foreach ($details as $index => $detail) { ?>
-        <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1_<?php echo $index; ?>'), { onclone: function(cloned) { cloned.getElementById('capture1_<?php echo $index; ?>').style.display = 'block'; }}).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $mnemonics[$index]; ?></p>
-      <?php } ?>
-    </div>
-    <img src="data:image/png;base64,<?php echo $sc->qrcode(implode(PHP_EOL, $mnemonics)); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
-  </div>
-  <?php foreach ($details as $index => $detail) { ?>
-    <div id="capture1_<?php echo $index; ?>" class="sc-container sc-hidden">
-      <div class="sc-inner">
-        <?php if (!empty($input_label)) { ?>
-          <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?> &bull; <?php echo ($index + 1) . "/" . count($details); ?></div>
-        <?php } ?>
-        <p><?php echo $mnemonics[$index]; ?></p>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-9">
+        <div class="section">
+          <h2>Details</h2>
+        </div>
+        <?php
+        foreach ($details as $index => $detail) {
+          $sc->print($detail, 'Output  #' . ($index + 1));
+        }
+        ?>
       </div>
-      <img src="data:image/png;base64,<?php echo $sc->qrcode($mnemonics[$index]); ?>" class="sc-qrcode" />
+      <div class="col-sm-3">
+        <div id="capture1" class="card fluid" style="border: none;">
+          <?php if (!empty($input_label)) { ?>
+            <div class="section dark">
+              <h3><?php echo htmlspecialchars($input_label); ?></h3>
+            </div>
+          <?php } ?>
+          <img style="cursor: pointer;" class="section" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas); document.getElementById('modal-control').checked = true; });" src="data:image/png;base64,<?php echo $sc->qrcode(implode(PHP_EOL, $mnemonics)); ?>" />
+          <?php foreach ($details as $index => $detail) { ?>
+            <p style="cursor: pointer;" onclick="javascript: html2canvas(document.querySelector('#capture1_<?php echo $index; ?>'), { onclone: function(cloned) { cloned.getElementById('capture1_<?php echo $index; ?>').classList.remove('hidden'); }}).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas); document.getElementById('modal-control').checked = true; });"><?php echo $mnemonics[$index]; ?></p>
+          <?php } ?>
+        </div>
+        <?php foreach ($details as $index => $detail) { ?>
+          <div id="capture1_<?php echo $index; ?>" class="card fluid hidden" style="border: none;">
+            <?php if (!empty($input_label)) { ?>
+              <div class="section dark">
+                <h3><?php echo htmlspecialchars($input_label); ?> &bull; <?php echo ($index + 1) . "/" . count($details); ?></h3>
+              </div>
+            <?php } ?>
+            <img class="section" src="data:image/png;base64,<?php echo $sc->qrcode($mnemonics[$index]); ?>" />
+            <p><?php echo $mnemonics[$index]; ?></p>
+          </div>
+        <?php } ?>
+      </div>
     </div>
-  <?php } ?>
-  <div class="sc-canvas">
-    <canvas></canvas>
-  </div>
-  <div class="sc-footer">
-    <p><a href="https://github.com/rarioj/seedconceal">GitHub</a> &bull; <a href="/">Seed Conceal</a> &bull; Obscure</p>
   </div>
   <script type="text/javascript" src="/html2canvas.min.js"></script>
 </body>

@@ -23,6 +23,7 @@ $input_size = (int) filter_input(INPUT_POST, 'size', FILTER_SANITIZE_NUMBER_INT)
 $sc->size($input_size);
 $entropy = $sc->entropy();
 if (!empty($input_passphrase)) {
+  $input_size = $default_size;
   $input_passphrase = $sc->hash($input_passphrase, $input_salt, $input_iteration);
   if (!empty($input_password)) {
     $input_password = $sc->hash($input_password, $input_salt, $input_iteration);
@@ -38,31 +39,43 @@ $details = $sc->details($entropy);
 <html>
 
 <head>
-  <meta charset="utf-8">
   <title>Seed Conceal - Generate</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/mini.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
 </head>
 
 <body>
-  <div class="sc-container sc-first">
-    <div class="sc-inner">
-      <?php $sc->print($details, 'Details'); ?>
+  <header class="sticky" style="height: auto;">
+    <h1><span class="icon-home"></span> <a href="/">Seed Conceal</a> &bull; Generate</h1>
+  </header>
+  <input type="checkbox" id="modal-control" class="modal">
+  <div>
+    <div class="card" style="max-height: none; width: fit-content;">
+      <label for="modal-control" class="modal-close"></label>
+      <canvas></canvas>
     </div>
   </div>
-  <div id="capture1" class="sc-container">
-    <div class="sc-inner">
-      <?php if (!empty($input_label)) { ?>
-        <div class="sc-heading"><?php echo htmlspecialchars($input_label); ?></div>
-      <?php } ?>
-      <p class="sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });"><?php echo $details['Seed Phrase']; ?></p>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-9">
+        <div class="section">
+          <h2>Details</h2>
+        </div>
+        <?php $sc->print($details); ?>
+      </div>
+      <div class="col-sm-3">
+        <div id="capture1" class="card fluid" style="border: none;">
+          <?php if (!empty($input_label)) { ?>
+            <div class="section dark">
+              <h3><?php echo htmlspecialchars($input_label); ?></h3>
+            </div>
+          <?php } ?>
+          <img style="cursor: pointer;" class="section" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas); document.getElementById('modal-control').checked = true; });" src="data:image/png;base64,<?php echo $sc->qrcode($details[0]); ?>" />
+          <p style="cursor: pointer;" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas); document.getElementById('modal-control').checked = true; });"><?php echo $details[0]; ?></p>
+        </div>
+      </div>
     </div>
-    <img src="data:image/png;base64,<?php echo $sc->qrcode($details['Seed Phrase']); ?>" class="sc-qrcode sc-click" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas) });" />
-  </div>
-  <div class="sc-canvas">
-    <canvas></canvas>
-  </div>
-  <div class="sc-footer">
-    <p><a href="https://github.com/rarioj/seedconceal">GitHub</a> &bull; <a href="/">Seed Conceal</a> &bull; Generate</p>
   </div>
   <script type="text/javascript" src="/html2canvas.min.js"></script>
 </body>

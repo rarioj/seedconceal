@@ -19,6 +19,7 @@ $input_passphrase = readline('[>] ');
 $input_salt = $input_password = '';
 $input_iteration = 0;
 if (!empty($input_passphrase)) {
+  $input_size = $default_size;
   echo '[?] Enter a salt (optional but strongly recommended).' . PHP_EOL;
   $input_salt = readline('[>] ');
   if (!empty($input_salt)) {
@@ -31,13 +32,13 @@ if (!empty($input_passphrase)) {
   }
   echo '[?] Enter a password (optional but strongly recommended).' . PHP_EOL;
   $input_password = readline('[>] ');
-}
-
-echo '[?] Enter the byte size [' . implode('|', array_keys($sizes)) . '] (default ' . $default_size . ').' . PHP_EOL;
-$input_size = (int) readline('[>] ');
-if (empty($input_size) || empty($sizes[$input_size])) {
-  echo '[I] Using default byte size: ' . $default_size . PHP_EOL;
-  $input_size = $default_size;
+} else {
+  echo '[?] Enter the byte size [' . implode('|', array_keys($sizes)) . '] (default ' . $default_size . ').' . PHP_EOL;
+  $input_size = (int) readline('[>] ');
+  if (empty($input_size) || empty($sizes[$input_size])) {
+    echo '[I] Using default byte size: ' . $default_size . PHP_EOL;
+    $input_size = $default_size;
+  }
 }
 
 $sc->size($input_size);
@@ -51,7 +52,6 @@ if (!empty($input_passphrase)) {
     $entropy = $input_passphrase;
   }
 }
-$details = $sc->details($entropy);
-$sc->print($details, 'D E T A I L S');
 
-$sc->print([$details['Seed Phrase']], 'O U T P U T');
+$details = $sc->details($entropy);
+$sc->print($details);
