@@ -31,7 +31,7 @@ $default_language = $sc->config('default_language');
 
 <body>
   <header class="sticky" style="height: auto;">
-    <h1><span class="icon-home"></span> Seed Conceal</h1>
+    <p><span class="icon-link"></span> <a href="https://github.com/rarioj/seedconceal">GitHub</a> &bull; <span class="icon-home"></span> Seed Conceal</p>
   </header>
   <div class="container">
     <div class="row">
@@ -41,7 +41,7 @@ $default_language = $sc->config('default_language');
         </div>
         <form method="post" action="/generate.php" autocomplete="off">
           <div class="input-group vertical">
-            <label for="generate-label"><strong>Label</strong></label>
+            <label for="generate-label"><strong>Label</strong><br /><small>Wallet label/name for the QR code image card</small></label>
             <input type="text" id="generate-label" name="label" value="<?php echo $default_label; ?>">
           </div>
           <div class="input-group vertical">
@@ -79,7 +79,7 @@ $default_language = $sc->config('default_language');
         </div>
         <form method="post" action="/obscure.php" autocomplete="off">
           <div class="input-group vertical">
-            <label for="obscure-label"><strong>Label</strong></label>
+            <label for="obscure-label"><strong>Label</strong><br /><small>Wallet label/name for the QR code image card</small></label>
             <input type="text" id="obscure-label" name="label" value="<?php echo $default_label; ?>">
           </div>
           <div class="input-group vertical">
@@ -122,7 +122,7 @@ $default_language = $sc->config('default_language');
         </div>
         <form method="post" action="/reveal.php" autocomplete="off">
           <div class="input-group vertical">
-            <label for="reveal-label"><strong>Label</strong></label>
+            <label for="reveal-label"><strong>Label</strong><br /><small>Wallet label/name for the QR code image card</small></label>
             <input type="text" id="reveal-label" name="label" value="<?php echo $default_label; ?>">
           </div>
           <div class="input-group vertical">

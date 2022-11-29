@@ -62,37 +62,52 @@ $details = $sc->details($entropy);
 
 <body>
   <header class="sticky" style="height: auto;">
-    <h1><span class="icon-home"></span> <a href="/">Seed Conceal</a> &bull; Reveal</h1>
+    <p><span class="icon-link"></span> <a href="https://github.com/rarioj/seedconceal">GitHub</a> &bull; <span class="icon-home"></span> <a href="/">Seed Conceal</a> &bull; <span class="icon-search"></span> Reveal</p>
   </header>
-  <input type="checkbox" id="modal-control" class="modal">
-  <div>
-    <div class="card" style="max-height: none; width: fit-content;">
-      <label for="modal-control" class="modal-close"></label>
-      <canvas></canvas>
-    </div>
-  </div>
   <div class="container">
     <div class="row">
-      <div class="col-sm-9">
+      <div class="col-sm-8">
         <div class="section">
-          <h2>Details</h2>
+          <h2>Mnemonic</h2>
+        </div>
+        <div class="section rounded shadowed responsive-margin responsive-padding">
+          <p><?php echo $details[0]; ?></p>
+        </div>
+        <p>&nbsp;</p>
+        <div class="section">
+          <h2>Addresses</h2>
         </div>
         <?php $sc->print($details); ?>
       </div>
-      <div class="col-sm-3">
-        <div id="capture1" class="card fluid" style="border: none;">
+      <div class="col-sm-4">
+        <div class="section">
+          <h2>QR Card</h2>
+        </div>
+        <div class="section responsive-margin responsive-padding" id="qrcodes"></div>
+        <div id="capture" class="card fluid hidden" style="border: none;">
           <?php if (!empty($input_label)) { ?>
             <div class="section dark">
               <h3><?php echo htmlspecialchars($input_label); ?></h3>
             </div>
           <?php } ?>
-          <img style="cursor: pointer;" class="section" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas); document.getElementById('modal-control').checked = true; });" src="data:image/png;base64,<?php echo $sc->qrcode($details[0]); ?>" />
-          <p style="cursor: pointer;" onclick="javascript: html2canvas(document.querySelector('#capture1')).then(canvas => { document.getElementsByTagName('canvas')[0].replaceWith(canvas); document.getElementById('modal-control').checked = true; });"><?php echo $details[0]; ?></p>
+          <img class="section" src="data:image/png;base64,<?php echo $sc->qrcode($details[0]); ?>" />
+          <button class="inverse"><?php echo $details[0]; ?></button>
         </div>
       </div>
     </div>
   </div>
   <script type="text/javascript" src="/html2canvas.min.js"></script>
+  <script type="text/javascript">
+    html2canvas(document.querySelector('#capture'), {
+      onclone: (cloned) => {
+        cloned.getElementById('capture').classList.remove('hidden');
+      }
+    }).then((canvas) => {
+      var image = new Image();
+      image.src = canvas.toDataURL('image/png');
+      document.getElementById('qrcodes').appendChild(image);
+    });
+  </script>
 </body>
 
 </html>

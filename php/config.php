@@ -91,7 +91,7 @@ return [
   'default_language' => 'en',
 
   // Default split.
-  'default_split' => 1,
+  'default_split' => 2,
 
   // Blockchain explorer link.
   // %s => BTC address.

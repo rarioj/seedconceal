@@ -1,6 +1,6 @@
 # SeedConceal
 
-SeedConceal is a simple set of tools to generate a wallet seed phrase (random or deterministic), obscure an existing seed phrase, and reveal obscured seed phrases.
+SeedConceal is a simple set of tools to: **generate** a wallet seed phrase (either random or deterministic); **obscure** an existing seed phrase; and **reveal** obscured seed phrases.
 
 ## Requirements
 
@@ -28,18 +28,17 @@ cd php/web
 php -S localhost:9000
 ```
 
-Open a web browser and then go to `http://localhost:9000/`. You can adjust the port number to suit your need.
-
-On the web version, clicking on the generated seed phrases or the QR codes will allow you to capture the seed phrase card and save it as an image.
+Open a web browser and then go to `http://localhost:9000/`.
 
 #### CLI Mode
 
 ![SeedConceal CLI Mode](screenshot-php-cli.png)
 
 ```
-php php/cli/generate.php
-php php/cli/obscure.php
-php php/cli/reveal.php
+cd php/cli
+php generate.php
+php obscure.php
+php reveal.php
 ```
 
 Follow the interactive prompt for each tool.
@@ -48,13 +47,13 @@ Follow the interactive prompt for each tool.
 
 ### Generate
 
-This tool generates a valid seed phrase for a wallet using a deterministic or random approach. Only use this tool if you plan to create a new wallet or divulge a deterministic wallet seed phrase by entering all the required parameters.
+This tool generates a valid seed phrase for a wallet using a deterministic or random approach. Only use this tool if you plan to create a new wallet or divulge a deterministic wallet mnemonic by entering all the parameters.
 
-When generating a new wallet, leaving the passphrase field blank will let you use PHP's secure [random_bytes()](https://www.php.net/manual/en/function.random-bytes.php) function.
+When generating a new wallet, leaving the passphrase field blank will use PHP's secure [random_bytes()](https://www.php.net/manual/en/function.random-bytes.php) function.
 
-With a deterministic approach, please understand the risk of generating this type of wallet. See the [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf) paper. Unlike traditional Brain wallet which hashes a passphrase to generate a **private key**, SeedConceal will hash, XOR, salt, and iterate passphrase to generate **entropy**. Hence, this deterministic wallet generation will produce a seed phrase as well. The intent is to conceal your seed phrase by not remembering the mnemonic, but by remembering your private passphrase, password, and salt.
+With a deterministic approach, please understand the risk of generating this type of wallet. See the [Speed Optimizations in Bitcoin Key Recovery Attacks](https://eprint.iacr.org/2016/103.pdf) paper. Unlike traditional Brain wallet which hashes a passphrase to generate an entropy, SeedConceal will hash, XOR, salt, and iterate the entered passphrase. The intent is to conceal your seed phrase by not remembering the 12/24 words mnemonic, but by remembering your private passphrase, password, and salt.
 
-Ensure the passphrase used is unique, private, and never exposed on the internet. Using a password will reduce the attack vector by [XOR-ing](https://www.php.net/manual/en/function.gmp-xor.php) it with a hashed passphrase. The [hash salt and the number of iterations](https://www.php.net/manual/en/function.hash-pbkdf2.php) are essential when revealing the original mnemonic.
+Ensure the passphrase used is unique, private, and never been exposed on the internet. Using a password will reduce the attack vector by [XOR-ing](https://www.php.net/manual/en/function.gmp-xor.php) it with a hashed passphrase. The [hash salt and the number of iterations](https://www.php.net/manual/en/function.hash-pbkdf2.php) are essential when revealing the original mnemonic.
 
 ### Obscure
 
@@ -131,8 +130,9 @@ You can add custom wordlists and then register it as a new language in the `php/
 
 ## Libraries
 
-- [bitwasp/bitcoin](https://github.com/Bit-Wasp/bitcoin-php): Bitcoin library for PHP.
+- [protonlabs/bitcoin](https://github.com/ProtonMail/bitcoin-php): Bitcoin library for PHP 8.0+.
 - [html2canvas](https://html2canvas.hertzen.com/): Capture a container in a document as an image for the web version.
+- [minicss](https://minicss.us/): Mini CSS framework for the web version.
 - [milon/barcode](https://github.com/milon/barcode): Generate QR code for the web version.
 
 ###### Check out my [Starname](https://app.starname.me/profile/*rarioj) profile and buy me a ☕ or 🍺.
